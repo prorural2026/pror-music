@@ -1580,7 +1580,7 @@
       finished = true;
       cleanup();
       onFail();
-    }, 10000);
+    }, 15000);
     window[cbName] = function(data){
       if(finished) return;
       finished = true;
@@ -1609,9 +1609,7 @@
       term +
       ' AND mediatype:(audio)' +
       ' AND collection:(opensource_audio OR netlabels OR audio_music)' +
-      ' AND NOT collection:(podcasts OR radioprograms OR oldtimeradio OR OTRR OR librivoxaudio OR audio_bookandpoetry OR audio_tech OR audio_news OR audio_religion OR GratefulDead)' +
-      ' AND NOT title:(podcast OR "radio drama" OR sermon OR homily OR lecture OR interview OR "on the air" OR broadcast OR audiobook OR "old time radio")' +
-      ' AND NOT subject:(podcast OR sermon OR lecture OR interview)'
+      ' AND NOT collection:(podcasts OR radioprograms OR oldtimeradio OR OTRR OR librivoxaudio OR audio_bookandpoetry OR audio_tech OR audio_news OR audio_religion)'
     );
     const url = 'https://archive.org/advancedsearch.php?q=' + q +
       '&fl[]=identifier&fl[]=title&fl[]=creator&fl[]=downloads&fl[]=runtime&sort[]=downloads+desc&rows=24&output=json';
