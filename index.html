@@ -240,6 +240,7 @@
     font-family:Georgia,"Times New Roman",serif;
     font-size:17px;
     letter-spacing:.02em;
+    color:var(--accent);
   }
   .brand svg{ width:16px; height:16px; color:var(--accent); }
   .pl-switch-btn{
@@ -298,10 +299,10 @@
   }
   .now-title{
     font-family:Georgia,"Times New Roman",serif;
-    font-size:14px;
-    line-height:1.2;
+    font-size:20px;
+    line-height:1.15;
     margin:0;
-    min-height:17px;
+    min-height:23px;
     word-break:break-word;
   }
   .now-artist{
@@ -499,29 +500,27 @@
   .empty-state svg{ width:36px; height:36px; color:var(--line); margin-bottom:12px; }
   #fileInput, #linkInput{ display:none; }
   .tabs{
-    display:flex; gap:6px;
-    padding:10px 20px 0;
+    display:flex; gap:18px;
+    padding:14px 20px 0;
     flex-shrink:0;
+    border-bottom:1px solid var(--line);
   }
   .tab-btn{
-    flex:1;
+    flex:none;
     min-width:0;
     background:none;
-    border:1px solid var(--line);
+    border:none;
+    border-bottom:1.5px solid transparent;
     color:var(--ink-dim);
-    border-radius:8px;
-    padding:6px 4px;
-    font-size:10.5px;
+    padding:0 0 10px;
+    font-size:12px;
     cursor:pointer;
     white-space:nowrap;
-    overflow:hidden;
-    text-overflow:ellipsis;
   }
   .tab-btn.active{
-    background:var(--accent);
-    color:#10100f;
-    border-color:var(--accent);
-    font-weight:600;
+    color:var(--accent);
+    border-bottom-color:var(--accent);
+    font-weight:500;
   }
   .web-panel{ display:none; flex-direction:column; flex:1; min-height:0; min-width:0; overflow:hidden; }
   .web-panel.active{ display:flex; }
@@ -957,6 +956,26 @@
     `).join('');
   }
 
+  function showNowPlaying(name, artist, isPlaying){
+    nowTitle.textContent = name;
+    nowArtist.textContent = artist || '';
+    statusLabel.textContent = isPlaying ? 'Tocando agora' : 'Pausado';
+    bars.classList.toggle('playing', !!isPlaying);
+  }
+
+  function refreshNowPlayingFromPlaylist(){
+    const pl = currentPlaylist();
+    if(pl && state.currentIndex !== -1 && pl.tracks[state.currentIndex]){
+      const t = pl.tracks[state.currentIndex];
+      showNowPlaying(t.name, t.artist || 'Faixa local', state.isPlaying);
+    } else {
+      nowTitle.textContent = 'Toque numa música da lista';
+      nowArtist.textContent = '';
+      statusLabel.textContent = 'Nenhuma faixa';
+      bars.classList.remove('playing');
+    }
+  }
+
   function loadTrack(idx, autoplay){
     const pl = currentPlaylist();
     if(!pl || idx < 0 || idx >= pl.tracks.length) return;
@@ -966,11 +985,11 @@
       linkInput.click();
       return;
     }
+    stopPreview();
     state.currentIndex = idx;
     audio.src = t.url;
-    nowTitle.textContent = t.name;
-    nowArtist.textContent = t.artist || 'Faixa local';
-    statusLabel.textContent = autoplay ? 'Tocando agora' : 'Pronto para tocar';
+    showNowPlaying(t.name, t.artist || 'Faixa local', autoplay);
+    if(!autoplay) statusLabel.textContent = 'Pronto para tocar';
     if(autoplay){
       audio.play().then(()=>{ state.isPlaying = true; updatePlayUI(); }).catch(()=>{});
     }
@@ -1014,6 +1033,7 @@
       return;
     }
     if(audio.paused){
+      stopPreview();
       audio.play().then(()=>{ state.isPlaying = true; updatePlayUI(); }).catch(()=>{});
     } else {
       audio.pause();
@@ -1395,6 +1415,7 @@
       if(previewPlayingId === id){
         stopPreview();
         previewBtn.classList.remove('playing-preview');
+        refreshNowPlayingFromPlaylist();
         return;
       }
       stopPreview();
@@ -1404,7 +1425,9 @@
       previewAudio.play();
       previewPlayingId = id;
       syncMiniBars();
-      previewAudio.addEventListener('ended', () => { previewPlayingId = null; syncMiniBars(); });
+      const rMeta = window._webResultsData && window._webResultsData[id];
+      showNowPlaying((rMeta && rMeta.trackName) || 'Prévia', (rMeta && rMeta.artistName) || '', true);
+      previewAudio.addEventListener('ended', () => { previewPlayingId = null; syncMiniBars(); refreshNowPlayingFromPlaylist(); });
       return;
     }
     const addBtn = e.target.closest('[data-addweb]');
@@ -1756,6 +1779,7 @@
       const id = playBtn.dataset.iaplay;
       if(previewPlayingId === id){
         stopPreview();
+        refreshNowPlayingFromPlaylist();
         return;
       }
       const originalHtml = playBtn.innerHTML;
@@ -1770,7 +1794,10 @@
         previewAudio.play();
         previewPlayingId = id;
         syncMiniBars();
-        previewAudio.addEventListener('ended', () => { previewPlayingId = null; syncMiniBars(); });
+        const dMeta = window._iaResultsData && window._iaResultsData[id];
+        const dArtist = dMeta ? (Array.isArray(dMeta.creator) ? dMeta.creator.join(', ') : (dMeta.creator || 'Internet Archive')) : '';
+        showNowPlaying((dMeta && (dMeta.title || dMeta.identifier)) || 'Faixa livre', dArtist, true);
+        previewAudio.addEventListener('ended', () => { previewPlayingId = null; syncMiniBars(); refreshNowPlayingFromPlaylist(); });
       });
       return;
     }
