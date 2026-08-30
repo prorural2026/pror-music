@@ -22,7 +22,7 @@
       <svg viewBox="0 0 24 24" fill="currentColor"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3" fill="none" stroke="currentColor" stroke-width="2"></circle><circle cx="18" cy="16" r="3" fill="none" stroke="currentColor" stroke-width="2"></circle></svg>
       PROR-MUSIC
     </div>
-    <button class="qr-btn" id="qrBtn" title="Ver QR code">Q</button>
+    <button class="qr-btn" id="qrBtn" title="Ver QR code" style="display:none;">Q</button>
     <button class="pl-switch-btn" id="plSwitchBtn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
       <span id="plSwitchLabel">Rádio PRORURAL</span>
@@ -1416,6 +1416,17 @@
   const qrModal = document.getElementById('qrModal');
   const qrBtn = document.getElementById('qrBtn');
   const qrClose = document.getElementById('qrClose');
+
+  try{
+    const params = new URLSearchParams(window.location.search);
+    if(params.get('owner') === '1'){
+      localStorage.setItem('pm_owner', '1');
+    }
+    if(localStorage.getItem('pm_owner') === '1' && qrBtn){
+      qrBtn.style.display = 'flex';
+    }
+  }catch(e){ /* localStorage indisponível, mantém escondido */ }
+
   if(qrBtn){
     qrBtn.addEventListener('click', () => { qrModal.classList.add('open'); });
   }
