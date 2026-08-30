@@ -1312,7 +1312,7 @@
       <div class="web-item" data-id="${escapeHtml(String(r.trackId))}">
         <img src="${escapeHtml(r.artworkUrl60 || r.artworkUrl100 || '')}" alt="">
         <div class="web-item-info">
-          <div class="web-item-name">${escapeHtml(r.trackName || 'Sem título')}<span class="mini-bars" data-mbid="${escapeHtml(String(r.trackId))}"><span></span><span></span><span></span></span></div>
+          <div class="web-item-name" data-preview="${escapeHtml(String(r.trackId))}" data-url="${escapeHtml(r.previewUrl || '')}" style="cursor:pointer;">${escapeHtml(r.trackName || 'Sem título')}<span class="mini-bars" data-mbid="${escapeHtml(String(r.trackId))}"><span></span><span></span><span></span></span></div>
           <div class="web-item-artist">${escapeHtml(r.artistName || '')}${r.trackTimeMillis ? ' · ' + escapeHtml(fmtDuration(r.trackTimeMillis)) : ''}</div>
         </div>
         <div class="web-item-actions">
@@ -1644,7 +1644,7 @@
     freeResults.innerHTML = docs.map(d => `
       <div class="web-item" data-ia="${escapeHtml(d.identifier)}">
         <div class="web-item-info">
-          <div class="web-item-name">${escapeHtml(d.title || d.identifier)}<span class="mini-bars" data-mbid="${escapeHtml(d.identifier)}"><span></span><span></span><span></span></span></div>
+          <div class="web-item-name" data-iaplay="${escapeHtml(d.identifier)}" style="cursor:pointer;">${escapeHtml(d.title || d.identifier)}<span class="mini-bars" data-mbid="${escapeHtml(d.identifier)}"><span></span><span></span><span></span></span></div>
           <div class="web-item-artist">${escapeHtml(Array.isArray(d.creator) ? d.creator.join(', ') : (d.creator || 'Internet Archive'))}${d.runtime ? ' · ' + escapeHtml(String(d.runtime)) : ''}</div>
         </div>
         <div class="web-item-actions">
