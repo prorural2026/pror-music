@@ -40,8 +40,13 @@
     <h1 class="now-title" id="nowTitle">Toque numa música da lista</h1>
     <p class="now-artist" id="nowArtist"></p>
 
-    <div class="bars" id="bars">
-      <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+    <div class="now-row">
+      <div class="bars" id="bars">
+        <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
+      </div>
+      <button class="quick-pause-btn" id="quickPauseBtn" title="Pausar/Retomar">
+        <svg id="quickPauseIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
+      </button>
     </div>
 
     <div class="progress-row">
@@ -311,12 +316,32 @@
     margin:2px 0 0;
     min-height:13px;
   }
+  .now-row{
+    display:flex;
+    align-items:center;
+    justify-content:space-between;
+    margin-top:8px;
+  }
+  .quick-pause-btn{
+    background:none;
+    border:1px solid var(--line);
+    color:var(--accent);
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+    padding:0;
+  }
+  .quick-pause-btn svg{ width:12px; height:12px; }
   .bars{
     display:flex;
     align-items:flex-end;
     gap:2.5px;
     height:20px;
-    margin-top:8px;
   }
   .bars span{
     width:2.5px;
@@ -975,6 +1000,15 @@
     nowArtist.textContent = artist || '';
     statusLabel.textContent = isPlaying ? 'Tocando agora' : 'Pausado';
     bars.classList.toggle('playing', !!isPlaying);
+    updateQuickPauseIcon(!!isPlaying);
+  }
+
+  function updateQuickPauseIcon(isPlaying){
+    const icon = document.getElementById('quickPauseIcon');
+    if(!icon) return;
+    icon.innerHTML = isPlaying
+      ? '<path d="M6 5h4v14H6zm8 0h4v14h-4z"></path>'
+      : '<path d="M8 5v14l11-7z"></path>';
   }
 
   function refreshNowPlayingFromPlaylist(){
@@ -1066,6 +1100,7 @@
       bars.classList.remove('playing');
       if(state.currentIndex !== -1) statusLabel.textContent = 'Pausado';
     }
+    if(!previewAudio) updateQuickPauseIcon(state.isPlaying);
     updateMediaSessionPlaybackState();
     renderPlaylist();
   }
@@ -1309,9 +1344,10 @@
   let activeWebSearchCleanup = null;
 
   function syncMiniBars(){
+    const actuallyPlaying = previewPlayingId != null && previewAudio && !previewAudio.paused;
     [webResults, freeResults].forEach(container => {
       container.querySelectorAll('.mini-bars[data-mbid]').forEach(el => {
-        el.classList.toggle('playing', previewPlayingId != null && el.dataset.mbid === String(previewPlayingId));
+        el.classList.toggle('playing', actuallyPlaying && el.dataset.mbid === String(previewPlayingId));
       });
     });
   }
@@ -1441,7 +1477,7 @@
       syncMiniBars();
       const rMeta = window._webResultsData && window._webResultsData[id];
       showNowPlaying((rMeta && rMeta.trackName) || 'Prévia', (rMeta && rMeta.artistName) || '', true);
-      previewAudio.addEventListener('ended', () => { previewPlayingId = null; syncMiniBars(); refreshNowPlayingFromPlaylist(); });
+      previewAudio.addEventListener('ended', () => { previewPlayingId = null; previewAudio = null; syncMiniBars(); refreshNowPlayingFromPlaylist(); });
       return;
     }
     const addBtn = e.target.closest('[data-addweb]');
@@ -1516,6 +1552,24 @@
     if(installBtn) installBtn.style.display = 'none';
     deferredInstallPrompt = null;
   });
+
+  const quickPauseBtn = document.getElementById('quickPauseBtn');
+  if(quickPauseBtn){
+    quickPauseBtn.addEventListener('click', () => {
+      if(previewAudio){
+        if(previewAudio.paused){
+          previewAudio.play();
+          showNowPlaying(nowTitle.textContent, nowArtist.textContent, true);
+        } else {
+          previewAudio.pause();
+          showNowPlaying(nowTitle.textContent, nowArtist.textContent, false);
+        }
+        syncMiniBars();
+      } else {
+        togglePlay();
+      }
+    });
+  }
 
   const qrModal = document.getElementById('qrModal');
   const qrBtn = document.getElementById('qrBtn');
@@ -1817,7 +1871,7 @@
         const dMeta = window._iaResultsData && window._iaResultsData[id];
         const dArtist = dMeta ? (Array.isArray(dMeta.creator) ? dMeta.creator.join(', ') : (dMeta.creator || 'Internet Archive')) : '';
         showNowPlaying((dMeta && (dMeta.title || dMeta.identifier)) || 'Faixa livre', dArtist, true);
-        previewAudio.addEventListener('ended', () => { previewPlayingId = null; syncMiniBars(); refreshNowPlayingFromPlaylist(); });
+        previewAudio.addEventListener('ended', () => { previewPlayingId = null; previewAudio = null; syncMiniBars(); refreshNowPlayingFromPlaylist(); });
       });
       return;
     }
