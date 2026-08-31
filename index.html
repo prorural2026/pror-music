@@ -1893,6 +1893,7 @@
     `).join('');
     window._iaResultsData = {};
     docs.forEach(d => window._iaResultsData[d.identifier] = d);
+    window._iaResultsList = docs;
   }
 
   function fetchIAAudioUrl(identifier, cb){
@@ -1906,6 +1907,35 @@
       },
       () => cb(null)
     );
+  }
+
+  function playIATrack(id, onSettled){
+    fetchIAAudioUrl(id, (url) => {
+      if(onSettled) onSettled();
+      if(!url) return;
+      stopPreview();
+      audio.pause(); state.isPlaying = false; updatePlayUI();
+      previewAudio = new Audio(url);
+      previewAudio.volume = audio.volume;
+      previewAudio.play();
+      previewPlayingId = id;
+      syncMiniBars();
+      const dMeta = window._iaResultsData && window._iaResultsData[id];
+      const dArtist = dMeta ? (Array.isArray(dMeta.creator) ? dMeta.creator.join(', ') : (dMeta.creator || 'Internet Archive')) : '';
+      showNowPlaying((dMeta && (dMeta.title || dMeta.identifier)) || 'Faixa livre', dArtist, true);
+      previewAudio.addEventListener('ended', () => {
+        previewPlayingId = null;
+        previewAudio = null;
+        syncMiniBars();
+        const list = window._iaResultsList || [];
+        const idx = list.findIndex(d => d.identifier === id);
+        if(idx !== -1 && idx + 1 < list.length){
+          playIATrack(list[idx + 1].identifier);
+        } else {
+          refreshNowPlayingFromPlaylist();
+        }
+      });
+    });
   }
 
   freeSearchBtn.addEventListener('click', runFreeSearch);
@@ -1931,21 +1961,7 @@
       }
       const originalHtml = playBtn.innerHTML;
       playBtn.innerHTML = '…';
-      fetchIAAudioUrl(id, (url) => {
-        playBtn.innerHTML = originalHtml;
-        if(!url) return;
-        stopPreview();
-        audio.pause(); state.isPlaying = false; updatePlayUI();
-        previewAudio = new Audio(url);
-        previewAudio.volume = audio.volume;
-        previewAudio.play();
-        previewPlayingId = id;
-        syncMiniBars();
-        const dMeta = window._iaResultsData && window._iaResultsData[id];
-        const dArtist = dMeta ? (Array.isArray(dMeta.creator) ? dMeta.creator.join(', ') : (dMeta.creator || 'Internet Archive')) : '';
-        showNowPlaying((dMeta && (dMeta.title || dMeta.identifier)) || 'Faixa livre', dArtist, true);
-        previewAudio.addEventListener('ended', () => { previewPlayingId = null; previewAudio = null; syncMiniBars(); refreshNowPlayingFromPlaylist(); });
-      });
+      playIATrack(id, () => { playBtn.innerHTML = originalHtml; });
       return;
     }
     const addBtn = e.target.closest('[data-iaadd]');
