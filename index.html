@@ -1815,6 +1815,9 @@
           <button data-iaadd="${escapeHtml(d.identifier)}" title="Adicionar à playlist (faixa completa)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           </button>
+          <button data-iadownload="${escapeHtml(d.identifier)}" title="Baixar pro celular (licença livre)">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+          </button>
         </div>
       </div>
     `).join('');
@@ -1895,6 +1898,28 @@
         renderPlaylist();
         saveStructure();
         addBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
+      });
+    }
+    const downloadBtn = e.target.closest('[data-iadownload]');
+    if(downloadBtn){
+      const id = downloadBtn.dataset.iadownload;
+      const d = window._iaResultsData && window._iaResultsData[id];
+      if(!d) return;
+      const originalHtml = downloadBtn.innerHTML;
+      downloadBtn.innerHTML = '…';
+      fetchIAAudioUrl(id, (url) => {
+        downloadBtn.innerHTML = originalHtml;
+        if(!url) return;
+        const ext = (url.split('.').pop() || 'mp3').split('?')[0];
+        const safeName = (d.title || d.identifier).replace(/[\\/:*?"<>|]/g, '').slice(0, 80);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = safeName + '.' + ext;
+        a.target = '_blank';
+        a.rel = 'noopener';
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
       });
     }
   });
