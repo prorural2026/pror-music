@@ -35,7 +35,21 @@
     </button>
   </div>
 
-  <header>
+  <div class="mini-player" id="miniPlayer">
+    <div class="mini-player-info">
+      <p class="mini-player-title" id="miniTitle">Toque numa música da lista</p>
+      <p class="mini-player-artist" id="miniArtist"></p>
+    </div>
+    <button class="mini-player-btn" id="miniPlayBtn" title="Tocar/Pausar">
+      <svg id="miniPlayIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
+    </button>
+    <svg class="mini-player-chevron" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="18 15 12 9 6 15"></polyline></svg>
+  </div>
+
+  <header id="playerHeader">
+    <button class="collapse-handle" id="collapseHandle" title="Recolher">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
+    </button>
     <p class="eyebrow" id="statusLabel">Nenhuma faixa</p>
     <h1 class="now-title" id="nowTitle">Toque numa música da lista</h1>
     <p class="now-artist" id="nowArtist"></p>
@@ -302,6 +316,63 @@
   .install-btn svg{ width:13px; height:13px; }
   .pl-switch-btn span{ overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
   .pl-switch-btn svg{ width:13px; height:13px; flex-shrink:0; }
+  .mini-player{
+    display:flex;
+    align-items:center;
+    gap:10px;
+    padding:10px 20px;
+    flex-shrink:0;
+    cursor:pointer;
+    border-bottom:1px solid var(--line);
+  }
+  .mini-player-info{ flex:1; min-width:0; }
+  .mini-player-title{
+    font-size:13px;
+    color:var(--ink);
+    margin:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .mini-player-artist{
+    font-size:11px;
+    color:var(--ink-dim);
+    margin:1px 0 0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+  .mini-player-btn{
+    background:none;
+    border:none;
+    color:var(--accent);
+    padding:4px;
+    cursor:pointer;
+    flex-shrink:0;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .mini-player-btn svg{ width:22px; height:22px; }
+  .mini-player-chevron{
+    width:16px; height:16px;
+    color:var(--ink-dim);
+    flex-shrink:0;
+  }
+  .mini-player.hidden{ display:none; }
+  .collapse-handle{
+    display:flex;
+    background:none;
+    border:none;
+    color:var(--ink-dim);
+    width:100%;
+    padding:2px 0 6px;
+    cursor:pointer;
+    justify-content:center;
+  }
+  .collapse-handle svg{ width:18px; height:18px; }
+  #playerHeader{ display:none; }
+  #playerHeader.expanded{ display:block; }
   header{
     padding:10px 20px 8px;
     flex-shrink:0;
@@ -1044,14 +1115,20 @@
     statusLabel.textContent = isPlaying ? 'Tocando agora' : 'Pausado';
     bars.classList.toggle('playing', !!isPlaying);
     updateQuickPauseIcon(!!isPlaying);
+    const miniTitle = document.getElementById('miniTitle');
+    const miniArtist = document.getElementById('miniArtist');
+    if(miniTitle) miniTitle.textContent = name;
+    if(miniArtist) miniArtist.textContent = artist || '';
   }
 
   function updateQuickPauseIcon(isPlaying){
-    const icon = document.getElementById('quickPauseIcon');
-    if(!icon) return;
-    icon.innerHTML = isPlaying
+    const iconPath = isPlaying
       ? '<path d="M6 5h4v14H6zm8 0h4v14h-4z"></path>'
       : '<path d="M8 5v14l11-7z"></path>';
+    const icon = document.getElementById('quickPauseIcon');
+    if(icon) icon.innerHTML = iconPath;
+    const miniIcon = document.getElementById('miniPlayIcon');
+    if(miniIcon) miniIcon.innerHTML = iconPath;
   }
 
   function refreshNowPlayingFromPlaylist(){
@@ -1648,6 +1725,31 @@
       } else {
         togglePlay();
       }
+    });
+  }
+
+  const playerHeader = document.getElementById('playerHeader');
+  const miniPlayer = document.getElementById('miniPlayer');
+  const collapseHandle = document.getElementById('collapseHandle');
+  const miniPlayBtn = document.getElementById('miniPlayBtn');
+
+  function togglePlayerExpanded(){
+    const isExpanded = playerHeader.classList.toggle('expanded');
+    miniPlayer.classList.toggle('hidden', isExpanded);
+  }
+
+  if(miniPlayer){
+    miniPlayer.addEventListener('click', (e) => {
+      if(e.target.closest('#miniPlayBtn')) return;
+      togglePlayerExpanded();
+    });
+  }
+  if(collapseHandle){
+    collapseHandle.addEventListener('click', togglePlayerExpanded);
+  }
+  if(miniPlayBtn){
+    miniPlayBtn.addEventListener('click', () => {
+      if(quickPauseBtn) quickPauseBtn.click();
     });
   }
 
