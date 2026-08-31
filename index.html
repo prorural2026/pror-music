@@ -49,7 +49,7 @@
       </button>
     </div>
 
-    <div class="progress-row">
+    <div class="progress-row" id="progressRow">
       <span class="time" id="curTime">0:00</span>
       <input type="range" id="seek" min="0" max="100" value="0" step="0.1" style="flex:1;">
       <span class="time right" id="durTime">0:00</span>
@@ -74,8 +74,10 @@
     </div>
 
     <div class="volume-row">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-      <input type="range" id="volume" min="0" max="100" value="100" style="flex:1;">
+      <button class="volume-btn" id="volumeBtn" title="Toque pra mostrar volume, toque 2x pra mudo">
+        <svg id="volumeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
+      </button>
+      <input type="range" id="volume" min="0" max="100" value="100" class="volume-slider" style="flex:1;">
     </div>
   </header>
 
@@ -377,6 +379,15 @@
     display:flex;
     align-items:center;
     gap:8px;
+    margin-top:0;
+    max-height:0;
+    opacity:0;
+    overflow:hidden;
+    transition:max-height .25s ease, opacity .2s ease, margin-top .25s ease;
+  }
+  .progress-row.visible{
+    max-height:30px;
+    opacity:1;
     margin-top:10px;
   }
   input[type="range"]{
@@ -435,8 +446,30 @@
     margin-top:8px;
     padding:0 6px;
   }
-  .volume-row svg{ width:15px; height:15px; color:var(--ink-dim); flex-shrink:0; }
-  #volume{ flex:1; }
+  .volume-btn{
+    background:none;
+    border:none;
+    padding:4px;
+    cursor:pointer;
+    flex-shrink:0;
+    color:var(--ink-dim);
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .volume-btn svg{ width:15px; height:15px; }
+  .volume-btn.muted{ color:var(--danger); }
+  .volume-slider{
+    flex:1;
+    max-width:0;
+    opacity:0;
+    overflow:hidden;
+    transition:max-width .25s ease, opacity .2s ease;
+  }
+  .volume-slider.visible{
+    max-width:200px;
+    opacity:1;
+  }
   .search-wrap{
     padding:12px 20px 8px;
     flex-shrink:0;
@@ -1091,14 +1124,17 @@
   }
 
   function updatePlayUI(){
+    const progressRow = document.getElementById('progressRow');
     if(state.isPlaying){
       playIcon.innerHTML = '<path d="M6 5h4v14H6zm8 0h4v14h-4z"></path>';
       bars.classList.add('playing');
       statusLabel.textContent = 'Tocando agora';
+      if(progressRow) progressRow.classList.add('visible');
     } else {
       playIcon.innerHTML = '<path d="M8 5v14l11-7z"></path>';
       bars.classList.remove('playing');
       if(state.currentIndex !== -1) statusLabel.textContent = 'Pausado';
+      if(progressRow) progressRow.classList.remove('visible');
     }
     if(!previewAudio) updateQuickPauseIcon(state.isPlaying);
     updateMediaSessionPlaybackState();
@@ -1253,6 +1289,40 @@
   });
 
   volume.addEventListener('input', () => { audio.volume = volume.value / 100; });
+
+  const volumeBtn = document.getElementById('volumeBtn');
+  const volumeIcon = document.getElementById('volumeIcon');
+  let lastVolumeBeforeMute = 100;
+  let volumeBtnTapTimer = null;
+
+  function setMuted(muted){
+    if(muted){
+      lastVolumeBeforeMute = volume.value > 0 ? Number(volume.value) : lastVolumeBeforeMute;
+      volume.value = 0;
+      audio.volume = 0;
+      volumeBtn.classList.add('muted');
+      volumeIcon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>';
+    } else {
+      const restore = lastVolumeBeforeMute > 0 ? lastVolumeBeforeMute : 100;
+      volume.value = restore;
+      audio.volume = restore / 100;
+      volumeBtn.classList.remove('muted');
+      volumeIcon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>';
+    }
+  }
+
+  volumeBtn.addEventListener('click', () => {
+    if(volumeBtnTapTimer){
+      clearTimeout(volumeBtnTapTimer);
+      volumeBtnTapTimer = null;
+      setMuted(volumeBtn.classList.contains('muted') ? false : true);
+      return;
+    }
+    volumeBtnTapTimer = setTimeout(() => {
+      volume.classList.toggle('visible');
+      volumeBtnTapTimer = null;
+    }, 260);
+  });
 
   plSwitchBtn.addEventListener('click', () => {
     renderPlaylistSheet();
