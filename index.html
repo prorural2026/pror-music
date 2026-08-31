@@ -73,25 +73,12 @@
       <button id="shuffleBtn" title="Aleatório">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 3 21 3 21 8"></polyline><line x1="4" y1="20" x2="21" y2="3"></line><polyline points="21 16 21 21 16 21"></polyline><line x1="15" y1="15" x2="21" y2="21"></line><line x1="4" y1="4" x2="9" y2="9"></line></svg>
       </button>
-      <button id="prevBtn" title="Anterior">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h2v14H6zm3.5 7L18 5v14z"></path></svg>
-      </button>
       <button id="playBtn" title="Tocar/Pausar">
         <svg id="playIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
-      </button>
-      <button id="nextBtn" title="Próxima">
-        <svg viewBox="0 0 24 24" fill="currentColor"><path d="M16 5h2v14h-2zM6 5l8.5 7L6 19z"></path></svg>
       </button>
       <button id="repeatBtn" title="Repetir">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
       </button>
-    </div>
-
-    <div class="volume-row">
-      <button class="volume-btn" id="volumeBtn" title="Toque pra mostrar volume, toque 2x pra mudo">
-        <svg id="volumeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>
-      </button>
-      <input type="range" id="volume" min="0" max="100" value="100" class="volume-slider" style="flex:1;">
     </div>
   </header>
 
@@ -519,37 +506,6 @@
   #playBtn svg{ width:20px; height:20px; }
   .controls button:active{ transform:scale(.92); }
   #shuffleBtn.active, #repeatBtn.active{ color:var(--accent); }
-  .volume-row{
-    display:flex;
-    align-items:center;
-    gap:8px;
-    margin-top:8px;
-    padding:0 6px;
-  }
-  .volume-btn{
-    background:none;
-    border:none;
-    padding:4px;
-    cursor:pointer;
-    flex-shrink:0;
-    color:var(--ink-dim);
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-  .volume-btn svg{ width:15px; height:15px; }
-  .volume-btn.muted{ color:var(--danger); }
-  .volume-slider{
-    flex:1;
-    max-width:0;
-    opacity:0;
-    overflow:hidden;
-    transition:max-width .25s ease, opacity .2s ease;
-  }
-  .volume-slider.visible{
-    max-width:200px;
-    opacity:1;
-  }
   .search-wrap{
     padding:12px 20px 8px;
     flex-shrink:0;
@@ -964,14 +920,12 @@
   const repeatBtn = document.getElementById('repeatBtn');
   const fileInput = document.getElementById('fileInput');
   const linkInput = document.getElementById('linkInput');
-  const volume = document.getElementById('volume');
   const plSwitchBtn = document.getElementById('plSwitchBtn');
   const plSwitchLabel = document.getElementById('plSwitchLabel');
   const sheetBackdrop = document.getElementById('sheetBackdrop');
   const plList = document.getElementById('plList');
   const newPlName = document.getElementById('newPlName');
   const newPlBtn = document.getElementById('newPlBtn');
-
   function fmtTime(s){
     if(!isFinite(s) || s < 0) s = 0;
     const m = Math.floor(s/60);
@@ -1286,8 +1240,6 @@
   }
 
   document.getElementById('playBtn').addEventListener('click', togglePlay);
-  document.getElementById('nextBtn').addEventListener('click', nextTrack);
-  document.getElementById('prevBtn').addEventListener('click', prevTrack);
 
   shuffleBtn.addEventListener('click', () => {
     state.shuffle = !state.shuffle;
@@ -1375,41 +1327,6 @@
     audio.currentTime = (seek.value/100) * audio.duration;
   });
 
-  volume.addEventListener('input', () => { audio.volume = volume.value / 100; });
-
-  const volumeBtn = document.getElementById('volumeBtn');
-  const volumeIcon = document.getElementById('volumeIcon');
-  let lastVolumeBeforeMute = 100;
-  let volumeBtnTapTimer = null;
-
-  function setMuted(muted){
-    if(muted){
-      lastVolumeBeforeMute = volume.value > 0 ? Number(volume.value) : lastVolumeBeforeMute;
-      volume.value = 0;
-      audio.volume = 0;
-      volumeBtn.classList.add('muted');
-      volumeIcon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line>';
-    } else {
-      const restore = lastVolumeBeforeMute > 0 ? lastVolumeBeforeMute : 100;
-      volume.value = restore;
-      audio.volume = restore / 100;
-      volumeBtn.classList.remove('muted');
-      volumeIcon.innerHTML = '<polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>';
-    }
-  }
-
-  volumeBtn.addEventListener('click', () => {
-    if(volumeBtnTapTimer){
-      clearTimeout(volumeBtnTapTimer);
-      volumeBtnTapTimer = null;
-      setMuted(volumeBtn.classList.contains('muted') ? false : true);
-      return;
-    }
-    volumeBtnTapTimer = setTimeout(() => {
-      volume.classList.toggle('visible');
-      volumeBtnTapTimer = null;
-    }, 260);
-  });
 
   plSwitchBtn.addEventListener('click', () => {
     renderPlaylistSheet();
