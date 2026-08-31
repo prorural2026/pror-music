@@ -1864,10 +1864,17 @@
     );
   }
 
-  const JUNK_TITLE_PATTERNS = /y\s*2\s*mate|savefrom|mp3juice|yt\s*mp3|yt1s\.com|y2mp3|ssyoutube|onlinevideoconverter|videoder|full[\s-]?hd|1080p|720p|480p|download\s*mp3|video\s*download|downloader/i;
+  const JUNK_TITLE_PATTERNS = /y\s*2\s*mate|savefrom|mp3juice|yt\s*mp3|yt1s\.com|y2mp3|ssyoutube|onlinevideoconverter|videoder|full[\s-]?hd|1080p|720p|480p|download\s*mp3|video\s*download|downloader|not\s*official|unofficial|karaoke|cover\s*version|cover\s*of|tribute\s*to|backing\s*track/i;
+
+  const BLOCKED_IA_IDS = new Set([
+    'dontworrybehappy-vocalsinstrumental'
+  ]);
 
   function renderFreeResults(docs){
-    docs = (docs || []).filter(d => !JUNK_TITLE_PATTERNS.test(d.title || d.identifier || ''));
+    docs = (docs || []).filter(d =>
+      !JUNK_TITLE_PATTERNS.test(d.title || d.identifier || '') &&
+      !BLOCKED_IA_IDS.has(d.identifier)
+    );
     if(!docs.length){
       freeResults.innerHTML = '<div class="web-loading">Nada encontrado. Tenta um termo diferente.</div>';
       return;
