@@ -81,12 +81,6 @@
     </div>
   </header>
 
-  <div class="tabs">
-    <button class="tab-btn active" id="tabPlaylist">Minha playlist</button>
-    <button class="tab-btn" id="tabWeb">Buscar (Apple)</button>
-    <button class="tab-btn" id="tabFree">Música livre</button>
-  </div>
-
   <div class="web-panel" id="panelPlaylist">
     <div class="search-wrap">
       <div class="search-box">
@@ -150,6 +144,21 @@
       <button class="chip" data-genre="pop">Pop</button>
     </div>
     <div class="web-results" id="freeResults"></div>
+  </div>
+
+  <div class="tabs">
+    <button class="tab-btn active" id="tabPlaylist">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
+      <span>Playlist</span>
+    </button>
+    <button class="tab-btn" id="tabWeb">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+      <span>Buscar</span>
+    </button>
+    <button class="tab-btn" id="tabFree">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
+      <span>Livre</span>
+    </button>
   </div>
 
   <audio id="audio" preload="metadata"></audio>
@@ -571,27 +580,28 @@
   .empty-state svg{ width:36px; height:36px; color:var(--line); margin-bottom:12px; }
   #fileInput, #linkInput{ display:none; }
   .tabs{
-    display:flex; gap:18px;
-    padding:14px 20px 0;
+    display:flex;
     flex-shrink:0;
-    border-bottom:1px solid var(--line);
+    border-top:1px solid var(--line);
+    background:var(--bg-raised);
   }
   .tab-btn{
-    flex:none;
+    flex:1;
     min-width:0;
     background:none;
     border:none;
-    border-bottom:1.5px solid transparent;
     color:var(--ink-dim);
-    padding:0 0 10px;
-    font-size:12px;
+    padding:9px 4px 8px;
+    font-size:10px;
     cursor:pointer;
-    white-space:nowrap;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    gap:3px;
   }
+  .tab-btn svg{ width:20px; height:20px; flex-shrink:0; }
   .tab-btn.active{
     color:var(--accent);
-    border-bottom-color:var(--accent);
-    font-weight:500;
   }
   .web-panel{ display:none; flex-direction:column; flex:1; min-height:0; min-width:0; overflow:hidden; }
   .web-panel.active{ display:flex; }
