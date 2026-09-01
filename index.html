@@ -430,6 +430,7 @@
   @keyframes bB{ 0%,100%{ height:3px; } 50%{ height:11px; } }
   @keyframes bC{ 0%,100%{ height:3px; } 50%{ height:16px; } }
   @media (prefers-reduced-motion: reduce){ .bars.playing span{ animation:none; height:14px; box-shadow:none; } }
+  .bars.real-mode.playing span{ animation:none; transition:height .08s linear, background .15s linear; }
   .progress-row{
     display:flex;
     align-items:center;
@@ -1026,6 +1027,71 @@
     `).join('');
   }
 
+  // ---------- equalizador de verdade (só pra playlist local) ----------
+  let audioCtx = null;
+  let analyser = null;
+  let freqData = null;
+  let equalizerRafId = null;
+
+  function setupAudioAnalyser(){
+    if(audioCtx) return true;
+    try{
+      const AC = window.AudioContext || window.webkitAudioContext;
+      if(!AC) return false;
+      audioCtx = new AC();
+      const sourceNode = audioCtx.createMediaElementSource(audio);
+      analyser = audioCtx.createAnalyser();
+      analyser.fftSize = 64;
+      sourceNode.connect(analyser);
+      analyser.connect(audioCtx.destination);
+      freqData = new Uint8Array(analyser.frequencyBinCount);
+      return true;
+    }catch(e){
+      audioCtx = null;
+      analyser = null;
+      return false;
+    }
+  }
+
+  function barColorForIntensity(pct){
+    if(pct > 0.72) return '#f0801e';
+    if(pct > 0.4) return '#e8c15a';
+    return '#a9895a';
+  }
+
+  function renderRealEqualizerFrame(){
+    if(!state.isPlaying || previewAudio || !analyser){
+      equalizerRafId = null;
+      return;
+    }
+    analyser.getByteFrequencyData(freqData);
+    const barEls = bars.children;
+    const barsCount = barEls.length;
+    const groupSize = Math.max(1, Math.floor(freqData.length / barsCount));
+    for(let i = 0; i < barsCount; i++){
+      let sum = 0;
+      for(let j = 0; j < groupSize; j++){ sum += freqData[i*groupSize+j] || 0; }
+      const pct = (sum / groupSize) / 255;
+      barEls[i].style.height = (3 + pct*17).toFixed(1) + 'px';
+      barEls[i].style.background = barColorForIntensity(pct);
+    }
+    equalizerRafId = requestAnimationFrame(renderRealEqualizerFrame);
+  }
+
+  function startRealEqualizer(){
+    if(!setupAudioAnalyser()) return;
+    if(audioCtx.state === 'suspended') audioCtx.resume().catch(()=>{});
+    bars.classList.add('real-mode');
+    if(!equalizerRafId){
+      equalizerRafId = requestAnimationFrame(renderRealEqualizerFrame);
+    }
+  }
+
+  function stopRealEqualizer(){
+    bars.classList.remove('real-mode');
+    Array.from(bars.children).forEach(el => { el.style.height = ''; el.style.background = ''; });
+  }
+
   function showNowPlaying(name, artist, isPlaying){
     nowTitle.textContent = name;
     nowArtist.textContent = artist || '';
@@ -1139,6 +1205,11 @@
       if(progressRow) progressRow.classList.remove('visible');
     }
     if(!previewAudio) updateQuickPauseIcon(state.isPlaying);
+    if(state.isPlaying && !previewAudio){
+      startRealEqualizer();
+    } else {
+      stopRealEqualizer();
+    }
     updateMediaSessionPlaybackState();
     renderPlaylist();
   }
@@ -1490,6 +1561,7 @@
       previewAudio.volume = audio.volume;
       previewAudio.play();
       previewPlayingId = id;
+      stopRealEqualizer();
       syncMiniBars();
       const rMeta = window._webResultsData && window._webResultsData[id];
       showNowPlaying((rMeta && rMeta.trackName) || 'Prévia', (rMeta && rMeta.artistName) || '', true);
@@ -1900,6 +1972,7 @@
       previewAudio.volume = audio.volume;
       previewAudio.play();
       previewPlayingId = id;
+      stopRealEqualizer();
       syncMiniBars();
       const dMeta = window._iaResultsData && window._iaResultsData[id];
       const dArtist = dMeta ? (Array.isArray(dMeta.creator) ? dMeta.creator.join(', ') : (dMeta.creator || 'Internet Archive')) : '';
