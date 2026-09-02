@@ -550,6 +550,15 @@
   }
   .track.active .track-num{ color:var(--accent); }
   .track.missing .track-num{ color:var(--missing); }
+  .track-num.playing-circle{
+    width:22px; height:22px;
+    border-radius:50%;
+    background: radial-gradient(circle at 35% 30%, #d4f5e3, #7fd9a8 45%, #4caf7d 75%, #2e8b5f);
+    box-shadow: 0 0 8px rgba(124,217,168,.5);
+    display:flex; align-items:center; justify-content:center;
+    color:#0d2418 !important;
+  }
+  .play-mini-icon{ width:10px; height:10px; }
   .track-info{ flex:1; min-width:0; }
   .track-name{
     font-size:14px; min-width:0; max-width:100%; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -1051,7 +1060,7 @@
 
     playlistEl.innerHTML = visible.map((t, displayIdx) => `
       <div class="track ${t._idx === state.currentIndex ? 'active' : ''} ${t.missing ? 'missing' : ''}" data-idx="${t._idx}">
-        <div class="track-num">${t._idx === state.currentIndex && state.isPlaying ? '♪' : displayIdx+1}</div>
+        <div class="track-num ${t._idx === state.currentIndex && state.isPlaying ? 'playing-circle' : ''}">${t._idx === state.currentIndex && state.isPlaying ? '<svg class="play-mini-icon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>' : displayIdx+1}</div>
         <div class="track-info">
           <div class="track-name">${escapeHtml(t.name)}<span class="mini-bars ${t._idx === state.currentIndex && state.isPlaying ? 'playing' : ''}"><span></span><span></span><span></span></span></div>
           <div class="track-meta">${t.missing ? 'Toque para vincular o arquivo · ' : ''}${t.artist ? escapeHtml(t.artist) : 'Faixa local'}</div>
