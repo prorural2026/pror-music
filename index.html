@@ -720,6 +720,12 @@
   }
   .web-item-actions svg{ width:13px; height:13px; }
   .web-item-actions .playing-preview{ color:var(--accent); border-color:var(--accent); }
+  .web-item-actions button.playing-circle-btn{
+    background: radial-gradient(circle at 35% 30%, #d4f5e3, #7fd9a8 45%, #4caf7d 75%, #2e8b5f) !important;
+    border-color:transparent !important;
+    box-shadow: 0 0 8px rgba(124,217,168,.5);
+    color:#0d2418 !important;
+  }
   .web-loading{
     text-align:center;
     padding:30px;
@@ -1542,6 +1548,16 @@
       container.querySelectorAll('.mini-bars[data-mbid]').forEach(el => {
         el.classList.toggle('playing', actuallyPlaying && el.dataset.mbid === String(previewPlayingId));
       });
+    });
+    syncPlayButtonHighlight(actuallyPlaying);
+  }
+
+  function syncPlayButtonHighlight(actuallyPlaying){
+    webResults.querySelectorAll('button[data-preview]').forEach(btn => {
+      btn.classList.toggle('playing-circle-btn', !!actuallyPlaying && btn.dataset.preview === String(previewPlayingId));
+    });
+    freeResults.querySelectorAll('button[data-iaplay]').forEach(btn => {
+      btn.classList.toggle('playing-circle-btn', !!actuallyPlaying && btn.dataset.iaplay === String(previewPlayingId));
     });
   }
 
