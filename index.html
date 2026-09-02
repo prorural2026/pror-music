@@ -2020,6 +2020,35 @@
 
   const JAMENDO_CLIENT_ID = '709fa152'; // client_id de TESTE da Jamendo - trocar pela chave própria do usuário antes de divulgar
 
+  function openverseSearch(term, offset, cb){
+    const page = Math.floor(offset / 12) + 1;
+    const url = 'https://api.openverse.org/v1/audio/?q=' + encodeURIComponent(term) +
+      '&page_size=12&page=' + page;
+    fetch(url)
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(data => cb((data && data.results) || []))
+      .catch(() => cb([]));
+  }
+
+  function normalizeOpenverseTrack(t){
+    let runtime = '';
+    if(t.duration){
+      const totalSec = Math.round(t.duration / 1000);
+      const m = Math.floor(totalSec / 60);
+      const s = (totalSec % 60).toString().padStart(2,'0');
+      runtime = m + ':' + s;
+    }
+    return {
+      identifier: 'openverse:' + t.id,
+      title: t.title || 'Sem título',
+      creator: t.creator || 'Openverse',
+      runtime: runtime,
+      _jamendo: true,
+      _jamendoAudioUrl: t.url,
+      _jamendoDownloadAllowed: true
+    };
+  }
+
   function jamendoSearch(term, offset, cb){
     const url = 'https://api.jamendo.com/v3.0/tracks/?client_id=' + JAMENDO_CLIENT_ID +
       '&format=json&limit=12&offset=' + offset +
@@ -2062,11 +2091,12 @@
     freeSearchState.term = term;
     freeSearchState.iaStart = 0;
     freeSearchState.jamendoOffset = 0;
+    freeSearchState.openverseOffset = 0;
     freeSearchState.exhausted = false;
     fetchNextFreeResultsBatch(false);
   }
 
-  const freeSearchState = { term: '', iaStart: 0, jamendoOffset: 0, loading: false, exhausted: false };
+  const freeSearchState = { term: '', iaStart: 0, jamendoOffset: 0, openverseOffset: 0, loading: false, exhausted: false };
 
   function fetchNextFreeResultsBatch(append){
     if(freeSearchState.loading || freeSearchState.exhausted) return;
@@ -2088,30 +2118,36 @@
     const iaUrl = 'https://archive.org/advancedsearch.php?q=' + q +
       '&fl[]=identifier&fl[]=title&fl[]=creator&fl[]=downloads&fl[]=runtime&sort[]=downloads+desc&rows=12&start=' + freeSearchState.iaStart + '&output=json';
 
-    let iaDone = false, jamendoDone = false;
-    let iaDocs = [], jamendoDocs = [];
+    let iaDone = false, jamendoDone = false, openverseDone = false;
+    let iaDocs = [], jamendoDocs = [], openverseDocs = [];
 
-    function checkBothDone(){
-      if(!iaDone || !jamendoDone || cancelled) return;
+    function checkAllDone(){
+      if(!iaDone || !jamendoDone || !openverseDone || cancelled) return;
       freeSearchState.loading = false;
       activeFreeSearchCleanup = null;
       const indicator = document.getElementById('freeLoadMoreIndicator');
       if(indicator) indicator.remove();
       freeSearchState.iaStart += iaDocs.length;
       freeSearchState.jamendoOffset += jamendoDocs.length;
-      if(iaDocs.length === 0 && jamendoDocs.length === 0){
+      freeSearchState.openverseOffset += openverseDocs.length;
+      if(iaDocs.length === 0 && jamendoDocs.length === 0 && openverseDocs.length === 0){
         freeSearchState.exhausted = true;
       }
-      const combined = iaDocs.concat(jamendoDocs.map(normalizeJamendoTrack));
+      const combined = iaDocs
+        .concat(jamendoDocs.map(normalizeJamendoTrack))
+        .concat(openverseDocs.map(normalizeOpenverseTrack));
       renderFreeResults(combined, append);
     }
 
     jsonpRequest(iaUrl,
-      (data) => { if(!cancelled){ iaDocs = (data && data.response && data.response.docs) || []; } iaDone = true; checkBothDone(); },
-      () => { iaDone = true; checkBothDone(); }
+      (data) => { if(!cancelled){ iaDocs = (data && data.response && data.response.docs) || []; } iaDone = true; checkAllDone(); },
+      () => { iaDone = true; checkAllDone(); }
     );
     jamendoSearch(term, freeSearchState.jamendoOffset,
-      (results) => { if(!cancelled){ jamendoDocs = results; } jamendoDone = true; checkBothDone(); }
+      (results) => { if(!cancelled){ jamendoDocs = results; } jamendoDone = true; checkAllDone(); }
+    );
+    openverseSearch(term, freeSearchState.openverseOffset,
+      (results) => { if(!cancelled){ openverseDocs = results; } openverseDone = true; checkAllDone(); }
     );
   }
 
