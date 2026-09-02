@@ -1054,9 +1054,14 @@
   }
 
   function barColorForIntensity(pct){
-    if(pct > 0.72) return '#f0801e';
-    if(pct > 0.4) return '#e8c15a';
-    return '#a9895a';
+    const dim = [169,137,90], gold = [232,193,90], orange = [240,128,30];
+    let a, b, t;
+    if(pct < 0.5){ a = dim; b = gold; t = pct / 0.5; }
+    else { a = gold; b = orange; t = (pct - 0.5) / 0.5; }
+    const r = Math.round(a[0] + (b[0]-a[0])*t);
+    const g = Math.round(a[1] + (b[1]-a[1])*t);
+    const bl = Math.round(a[2] + (b[2]-a[2])*t);
+    return 'rgb(' + r + ',' + g + ',' + bl + ')';
   }
 
   function renderRealEqualizerFrame(){
@@ -1071,7 +1076,9 @@
     for(let i = 0; i < barsCount; i++){
       let sum = 0;
       for(let j = 0; j < groupSize; j++){ sum += freqData[i*groupSize+j] || 0; }
-      const pct = (sum / groupSize) / 255;
+      let pct = (sum / groupSize) / 255;
+      const boost = 1 + (i / barsCount) * 0.9;
+      pct = Math.min(1, pct * boost);
       barEls[i].style.height = (3 + pct*17).toFixed(1) + 'px';
       barEls[i].style.background = barColorForIntensity(pct);
     }
