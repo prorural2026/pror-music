@@ -1993,34 +1993,100 @@
     document.body.appendChild(script);
   }
 
+  const JAMENDO_CLIENT_ID = '709fa152'; // client_id de TESTE da Jamendo - trocar pela chave própria do usuário antes de divulgar
+
+  function jamendoSearch(term, offset, cb){
+    const url = 'https://api.jamendo.com/v3.0/tracks/?client_id=' + JAMENDO_CLIENT_ID +
+      '&format=json&limit=12&offset=' + offset +
+      '&namesearch=' + encodeURIComponent(term) +
+      '&include=musicinfo&audioformat=mp32';
+    jsonpRequest(url,
+      (data) => {
+        const results = (data && data.results) || [];
+        cb(results);
+      },
+      () => cb([])
+    );
+  }
+
+  function normalizeJamendoTrack(t){
+    let runtime = '';
+    const dur = Number(t.duration);
+    if(!isNaN(dur) && dur > 0){
+      const m = Math.floor(dur / 60);
+      const s = Math.floor(dur % 60).toString().padStart(2,'0');
+      runtime = m + ':' + s;
+    }
+    return {
+      identifier: 'jamendo:' + t.id,
+      title: t.name,
+      creator: t.artist_name,
+      runtime: runtime,
+      _jamendo: true,
+      _jamendoAudioUrl: t.audio,
+      _jamendoDownloadAllowed: !!t.audiodownload_allowed
+    };
+  }
+
   function runFreeSearch(){
     const term = freeSearchInput.value.trim();
     if(!term) return;
     if(activeFreeSearchCleanup){ activeFreeSearchCleanup(); activeFreeSearchCleanup = null; }
     freeResults.innerHTML = '<div class="web-loading">Buscando…</div>';
     stopPreview();
+    freeSearchState.term = term;
+    freeSearchState.iaStart = 0;
+    freeSearchState.jamendoOffset = 0;
+    freeSearchState.exhausted = false;
+    fetchNextFreeResultsBatch(false);
+  }
+
+  const freeSearchState = { term: '', iaStart: 0, jamendoOffset: 0, loading: false, exhausted: false };
+
+  function fetchNextFreeResultsBatch(append){
+    if(freeSearchState.loading || freeSearchState.exhausted) return;
+    const term = freeSearchState.term;
+    if(!term) return;
+    freeSearchState.loading = true;
+    if(append){
+      freeResults.insertAdjacentHTML('beforeend', '<div class="web-loading" id="freeLoadMoreIndicator">Carregando mais…</div>');
+    }
+    let cancelled = false;
+    activeFreeSearchCleanup = () => { cancelled = true; };
+
     const q = encodeURIComponent(
       term +
       ' AND mediatype:(audio)' +
       ' AND collection:(opensource_audio OR netlabels OR audio_music)' +
       ' AND NOT collection:(podcasts OR radioprograms OR oldtimeradio OR OTRR OR librivoxaudio OR audio_bookandpoetry OR audio_tech OR audio_news OR audio_religion)'
     );
-    const url = 'https://archive.org/advancedsearch.php?q=' + q +
-      '&fl[]=identifier&fl[]=title&fl[]=creator&fl[]=downloads&fl[]=runtime&sort[]=downloads+desc&rows=24&output=json';
-    let cancelled = false;
-    activeFreeSearchCleanup = () => { cancelled = true; };
-    jsonpRequest(url,
-      (data) => {
-        if(cancelled) return;
-        activeFreeSearchCleanup = null;
-        const docs = (data && data.response && data.response.docs) || [];
-        renderFreeResults(docs);
-      },
-      () => {
-        if(cancelled) return;
-        activeFreeSearchCleanup = null;
-        freeResults.innerHTML = '<div class="web-loading">Não foi possível buscar agora. Confira sua conexão e tente de novo.</div>';
+    const iaUrl = 'https://archive.org/advancedsearch.php?q=' + q +
+      '&fl[]=identifier&fl[]=title&fl[]=creator&fl[]=downloads&fl[]=runtime&sort[]=downloads+desc&rows=12&start=' + freeSearchState.iaStart + '&output=json';
+
+    let iaDone = false, jamendoDone = false;
+    let iaDocs = [], jamendoDocs = [];
+
+    function checkBothDone(){
+      if(!iaDone || !jamendoDone || cancelled) return;
+      freeSearchState.loading = false;
+      activeFreeSearchCleanup = null;
+      const indicator = document.getElementById('freeLoadMoreIndicator');
+      if(indicator) indicator.remove();
+      freeSearchState.iaStart += iaDocs.length;
+      freeSearchState.jamendoOffset += jamendoDocs.length;
+      if(iaDocs.length === 0 && jamendoDocs.length === 0){
+        freeSearchState.exhausted = true;
       }
+      const combined = iaDocs.concat(jamendoDocs.map(normalizeJamendoTrack));
+      renderFreeResults(combined, append);
+    }
+
+    jsonpRequest(iaUrl,
+      (data) => { if(!cancelled){ iaDocs = (data && data.response && data.response.docs) || []; } iaDone = true; checkBothDone(); },
+      () => { iaDone = true; checkBothDone(); }
+    );
+    jamendoSearch(term, freeSearchState.jamendoOffset,
+      (results) => { if(!cancelled){ jamendoDocs = results; } jamendoDone = true; checkBothDone(); }
     );
   }
 
@@ -2030,20 +2096,20 @@
     'dontworrybehappy-vocalsinstrumental'
   ]);
 
-  function renderFreeResults(docs){
+  function renderFreeResults(docs, append){
     docs = (docs || []).filter(d =>
       !JUNK_TITLE_PATTERNS.test(d.title || d.identifier || '') &&
       !BLOCKED_IA_IDS.has(d.identifier)
     );
-    if(!docs.length){
+    if(!docs.length && !append){
       freeResults.innerHTML = '<div class="web-loading">Nada encontrado. Tenta um termo diferente.</div>';
       return;
     }
-    freeResults.innerHTML = docs.map(d => `
+    const html = docs.map(d => `
       <div class="web-item" data-ia="${escapeHtml(d.identifier)}">
         <div class="web-item-info">
           <div class="web-item-name" data-iaplay="${escapeHtml(d.identifier)}" style="cursor:pointer;">${escapeHtml(d.title || d.identifier)}<span class="mini-bars" data-mbid="${escapeHtml(d.identifier)}"><span></span><span></span><span></span></span></div>
-          <div class="web-item-artist">${escapeHtml(Array.isArray(d.creator) ? d.creator.join(', ') : (d.creator || 'Internet Archive'))}${d.runtime ? ' · ' + escapeHtml(String(d.runtime)) : ''}</div>
+          <div class="web-item-artist">${escapeHtml(Array.isArray(d.creator) ? d.creator.join(', ') : (d.creator || (d._jamendo ? 'Jamendo' : 'Internet Archive')))}${d.runtime ? ' · ' + escapeHtml(String(d.runtime)) : ''}</div>
         </div>
         <div class="web-item-actions">
           <button data-iaplay="${escapeHtml(d.identifier)}" title="Tocar a música inteira">
@@ -2055,15 +2121,21 @@
           <button data-iaadd="${escapeHtml(d.identifier)}" title="Adicionar à playlist (faixa completa)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           </button>
+          ${(!d._jamendo || d._jamendoDownloadAllowed) ? `
           <button data-iadownload="${escapeHtml(d.identifier)}" title="Baixar pro celular (licença livre)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          </button>
+          </button>` : ''}
         </div>
       </div>
     `).join('');
-    window._iaResultsData = {};
+    if(append){
+      freeResults.insertAdjacentHTML('beforeend', html);
+    } else {
+      freeResults.innerHTML = html;
+      window._iaResultsData = {};
+    }
     docs.forEach(d => window._iaResultsData[d.identifier] = d);
-    window._iaResultsList = docs;
+    window._iaResultsList = append ? (window._iaResultsList || []).concat(docs) : docs;
   }
 
   function fetchIAAudioUrl(identifier, cb){
@@ -2079,8 +2151,17 @@
     );
   }
 
+  function fetchPlayableUrl(identifier, cb){
+    const d = window._iaResultsData && window._iaResultsData[identifier];
+    if(d && d._jamendo){
+      cb(d._jamendoAudioUrl || null);
+      return;
+    }
+    fetchIAAudioUrl(identifier, cb);
+  }
+
   function playIATrack(id, onSettled){
-    fetchIAAudioUrl(id, (url) => {
+    fetchPlayableUrl(id, (url) => {
       if(onSettled) onSettled();
       if(!url) return;
       stopPreview();
@@ -2110,6 +2191,11 @@
   }
 
   freeSearchBtn.addEventListener('click', runFreeSearch);
+
+  freeResults.addEventListener('scroll', () => {
+    const nearBottom = freeResults.scrollTop + freeResults.clientHeight >= freeResults.scrollHeight - 300;
+    if(nearBottom) fetchNextFreeResultsBatch(true);
+  });
   freeSearchInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') runFreeSearch(); });
   genreChips.addEventListener('click', (e) => {
     const chip = e.target.closest('.chip');
@@ -2143,7 +2229,7 @@
       if(!d || !pl) return;
       const originalHtml = addBtn.innerHTML;
       addBtn.innerHTML = '…';
-      fetchIAAudioUrl(id, (url) => {
+      fetchPlayableUrl(id, (url) => {
         if(!url){ addBtn.innerHTML = originalHtml; return; }
         pl.tracks.push({
           id: uid(),
@@ -2164,7 +2250,7 @@
       if(!d) return;
       const originalHtml = downloadBtn.innerHTML;
       downloadBtn.innerHTML = '…';
-      fetchIAAudioUrl(id, (url) => {
+      fetchPlayableUrl(id, (url) => {
         downloadBtn.innerHTML = originalHtml;
         if(!url) return;
         const ext = (url.split('.').pop() || 'mp3').split('?')[0];
