@@ -1054,10 +1054,10 @@
   }
 
   function barColorForIntensity(pct){
-    const dim = [169,137,90], gold = [232,193,90], orange = [240,128,30];
+    const green = [46,204,64], yellow = [255,220,0], red = [255,65,54];
     let a, b, t;
-    if(pct < 0.5){ a = dim; b = gold; t = pct / 0.5; }
-    else { a = gold; b = orange; t = (pct - 0.5) / 0.5; }
+    if(pct < 0.5){ a = green; b = yellow; t = pct / 0.5; }
+    else { a = yellow; b = red; t = (pct - 0.5) / 0.5; }
     const r = Math.round(a[0] + (b[0]-a[0])*t);
     const g = Math.round(a[1] + (b[1]-a[1])*t);
     const bl = Math.round(a[2] + (b[2]-a[2])*t);
