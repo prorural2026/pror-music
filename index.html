@@ -70,6 +70,23 @@
     </div>
   </header>
 
+  <div class="web-panel" id="panelHome">
+    <div class="home-scroll">
+      <p class="home-brand">PROR-MUSIC</p>
+      <p class="home-greeting" id="homeGreeting">Olá 🎵</p>
+
+      <div class="home-section" id="homeRecentSection" style="display:none;">
+        <p class="home-section-title">Tocadas recentemente</p>
+        <div class="home-recent-row" id="homeRecentRow"></div>
+      </div>
+
+      <div class="home-section">
+        <p class="home-section-title">Explorar gêneros</p>
+        <div class="home-genre-row" id="homeGenreRow"></div>
+      </div>
+    </div>
+  </div>
+
   <div class="web-panel" id="panelPlaylist">
     <div class="search-wrap">
       <div class="search-box">
@@ -136,7 +153,11 @@
   </div>
 
   <div class="tabs">
-    <button class="tab-btn active" id="tabPlaylist">
+    <button class="tab-btn active" id="tabHome">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 8h-3v9h-4v-6H10v6H6v-9H3z"></path></svg>
+      <span>Início</span>
+    </button>
+    <button class="tab-btn" id="tabPlaylist">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
       <span>Playlist</span>
     </button>
@@ -609,6 +630,29 @@
     color:var(--accent);
   }
   .web-panel{ display:none; flex-direction:column; flex:1; min-height:0; min-width:0; overflow:hidden; }
+  .home-scroll{ flex:1; overflow-y:auto; padding:18px 20px 24px; }
+  .home-brand{ font-family:Georgia,"Times New Roman",serif; font-size:14px; color:var(--accent); margin:0 0 3px; }
+  .home-greeting{ font-size:19px; color:var(--ink); margin:0 0 20px; }
+  .home-section{ margin-bottom:20px; }
+  .home-section-title{ font-size:10px; letter-spacing:.12em; text-transform:uppercase; color:var(--ink-dim); margin:0 0 10px; }
+  .home-recent-row{ display:flex; gap:10px; overflow-x:auto; padding-bottom:2px; }
+  .home-recent-card{ flex-shrink:0; width:88px; cursor:pointer; background:none; border:none; padding:0; text-align:left; }
+  .home-recent-art{
+    width:88px; height:88px; border-radius:8px; margin-bottom:6px;
+    background: radial-gradient(circle at 35% 30%, #d4f5e3, #7fd9a8 45%, #4caf7d 75%, #2e8b5f);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .home-recent-art svg{ width:22px; height:22px; }
+  .home-recent-name{
+    font-size:11px; color:var(--ink); margin:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .home-genre-row{ display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; }
+  .home-genre-chip{
+    flex-shrink:0; padding:10px 16px; background:var(--bg-raised);
+    border:1px solid var(--line); border-radius:20px;
+    font-size:12px; color:var(--accent); cursor:pointer; white-space:nowrap;
+  }
   .web-panel.active{ display:flex; }
   .web-search-box{
     display:flex; gap:8px;
@@ -1201,6 +1245,75 @@
     }
   }
 
+  const RECENT_KEY = 'pm_recent';
+  const HOME_GENRES = ['Rock','Jazz','R&B/Soul','Hip Hop/Rap','Funk','Blues','Sertanejo/Forró','MPB/Bossa'];
+
+  function recordRecentlyPlayed(trackId, playlistId, name, artist){
+    try{
+      let list = JSON.parse(localStorage.getItem(RECENT_KEY) || '[]');
+      list = list.filter(r => r.trackId !== trackId);
+      list.unshift({ trackId, playlistId, name, artist, ts: Date.now() });
+      list = list.slice(0, 10);
+      localStorage.setItem(RECENT_KEY, JSON.stringify(list));
+    }catch(e){ }
+  }
+
+  function getRecentlyPlayed(){
+    try{ return JSON.parse(localStorage.getItem(RECENT_KEY) || '[]'); }
+    catch(e){ return []; }
+  }
+
+  function greetingText(){
+    const h = new Date().getHours();
+    if(h < 12) return 'Bom dia 🎵';
+    if(h < 18) return 'Boa tarde 🎵';
+    return 'Boa noite 🎵';
+  }
+
+  function renderHome(){
+    document.getElementById('homeGreeting').textContent = greetingText();
+
+    const recent = getRecentlyPlayed();
+    const recentSection = document.getElementById('homeRecentSection');
+    const recentRow = document.getElementById('homeRecentRow');
+    if(recent.length){
+      recentSection.style.display = '';
+      recentRow.innerHTML = recent.map(r => `
+        <button class="home-recent-card" data-recent-track="${escapeHtml(r.trackId)}" data-recent-playlist="${escapeHtml(r.playlistId)}">
+          <div class="home-recent-art"><svg viewBox="0 0 24 24" fill="#0d2418"><path d="M8 5v14l11-7z"></path></svg></div>
+          <p class="home-recent-name">${escapeHtml(r.name)}</p>
+        </button>
+      `).join('');
+    } else {
+      recentSection.style.display = 'none';
+    }
+
+    const genreRow = document.getElementById('homeGenreRow');
+    genreRow.innerHTML = HOME_GENRES.map(g => `<div class="home-genre-chip" data-home-genre="${escapeHtml(g)}">${escapeHtml(g)}</div>`).join('');
+  }
+
+  document.getElementById('homeRecentRow').addEventListener('click', (e) => {
+    const card = e.target.closest('[data-recent-track]');
+    if(!card) return;
+    const trackId = card.dataset.recentTrack;
+    const playlistId = card.dataset.recentPlaylist;
+    const pl = state.playlists.find(p => p.id === playlistId);
+    if(!pl) return;
+    const idx = pl.tracks.findIndex(t => t.id === trackId);
+    if(idx === -1) return;
+    state.currentPlaylistId = playlistId;
+    activateTab(tabPlaylist, panelPlaylist);
+    loadTrack(idx, true);
+  });
+
+  document.getElementById('homeGenreRow').addEventListener('click', (e) => {
+    const chip = e.target.closest('[data-home-genre]');
+    if(!chip) return;
+    activateTab(tabFree, panelFree);
+    freeSearchInput.value = chip.dataset.homeGenre;
+    runFreeSearch();
+  });
+
   async function loadTrack(idx, autoplay){
     const pl = currentPlaylist();
     if(!pl || idx < 0 || idx >= pl.tracks.length) return;
@@ -1226,6 +1339,7 @@
     if(!autoplay) statusLabel.textContent = 'Pronto para tocar';
     if(autoplay){
       audio.play().then(()=>{ state.isPlaying = true; updatePlayUI(); }).catch(()=>{});
+      recordRecentlyPlayed(t.id, pl.id, t.name, t.artist || 'Faixa local');
     }
     updateMediaSession(t);
     renderPlaylist();
@@ -1528,15 +1642,18 @@
   const genreChips = document.getElementById('genreChips');
 
   function activateTab(tabBtn, panel){
-    [tabPlaylist, tabWeb, tabFree].forEach(b => b.classList.remove('active'));
-    [panelPlaylist, panelWeb, panelFree].forEach(p => p.classList.remove('active'));
+    [tabHome, tabPlaylist, tabWeb, tabFree].forEach(b => b.classList.remove('active'));
+    [panelHome, panelPlaylist, panelWeb, panelFree].forEach(p => p.classList.remove('active'));
     tabBtn.classList.add('active');
     panel.classList.add('active');
   }
+  const tabHome = document.getElementById('tabHome');
+  const panelHome = document.getElementById('panelHome');
+  tabHome.addEventListener('click', () => { activateTab(tabHome, panelHome); renderHome(); });
   tabPlaylist.addEventListener('click', () => activateTab(tabPlaylist, panelPlaylist));
   tabWeb.addEventListener('click', () => activateTab(tabWeb, panelWeb));
   tabFree.addEventListener('click', () => activateTab(tabFree, panelFree));
-  panelPlaylist.classList.add('active');
+  panelHome.classList.add('active');
 
   let previewAudio = null;
   let previewPlayingId = null;
@@ -1909,6 +2026,7 @@
       saveStructure();
     }
     renderPlaylist();
+    renderHome();
     tryAutoRestoreFiles();
   }
   init();
