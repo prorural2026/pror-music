@@ -112,18 +112,6 @@
     <div id="playlist"></div>
   </div>
 
-  <div class="web-panel" id="panelWeb">
-    <div class="web-search-box">
-      <input type="text" id="webSearchInput" placeholder="Nome da música ou artista" autocomplete="off">
-      <button class="mic-btn" id="micWebSearchInput" title="Buscar por voz" type="button">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
-      </button>
-      <button id="webSearchBtn">Buscar</button>
-    </div>
-    <p class="web-note">Busca oficial (Apple/iTunes). ▶ toca uma prévia de 30s. O ícone verde abre a música completa pra ouvir online no Spotify. A seta ↗ abre no Apple Music.</p>
-    <div class="web-results" id="webResults"></div>
-  </div>
-
   <div class="web-panel" id="panelFree">
     <div class="web-search-box">
       <input type="text" id="freeSearchInput" placeholder="Nome da música, artista ou gênero" autocomplete="off">
@@ -161,10 +149,6 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
       <span>Playlist</span>
     </button>
-    <button class="tab-btn" id="tabWeb">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-      <span>Buscar</span>
-    </button>
     <button class="tab-btn" id="tabFree">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
       <span>Livre</span>
@@ -187,18 +171,6 @@
     </div>
   </div>
 
-  <div class="cine-modal" id="cineModal">
-    <div class="cine-inner">
-      <button class="cine-close" id="cineClose" title="Fechar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-      </button>
-      <video id="cineVideo" controls playsinline></video>
-      <div class="cine-info">
-        <div class="cine-title" id="cineTitle"></div>
-        <div class="cine-artist" id="cineArtist"></div>
-      </div>
-    </div>
-  </div>
   <div class="cine-modal" id="qrModal">
     <div class="cine-inner">
       <button class="cine-close" id="qrClose" title="Fechar">
@@ -592,13 +564,6 @@
     padding:6px; cursor:pointer; flex-shrink:0;
   }
   .remove-btn svg{ width:15px; height:15px; }
-  .clip-track-btn{
-    background:none; border:none; color:var(--accent-dim);
-    padding:6px; cursor:pointer; flex-shrink:0;
-    display:flex; align-items:center; justify-content:center;
-  }
-  .clip-track-btn svg{ width:16px; height:16px; }
-  .clip-track-btn.has-clip{ color:var(--accent); }
   .empty-state{
     text-align:center; padding:50px 30px;
     color:var(--ink-dim); font-size:13px; line-height:1.6;
@@ -850,13 +815,6 @@
     cursor:pointer;
   }
   .cine-close svg{ width:22px; height:22px; }
-  #cineVideo{
-    width:100%;
-    max-height:60vh;
-    border-radius:12px;
-    background:#000;
-    display:block;
-  }
   .cine-info{
     padding:12px 4px 0;
     text-align:center;
@@ -1115,9 +1073,6 @@
           <div class="track-name">${escapeHtml(t.name)}<span class="mini-bars ${t._idx === state.currentIndex && state.isPlaying ? 'playing' : ''}"><span></span><span></span><span></span></span></div>
           <div class="track-meta">${t.missing ? 'Toque para vincular o arquivo · ' : ''}${t.artist ? escapeHtml(t.artist) : 'Faixa local'}</div>
         </div>
-        <button class="clip-track-btn" data-clipname="${escapeHtml(t.name)}" data-clipartist="${escapeHtml(t.artist || '')}" title="Assistir ao clipe">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg>
-        </button>
         <button class="remove-btn" data-remove="${t._idx}" title="Remover">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
         </button>
@@ -1506,7 +1461,6 @@
   });
 
   playlistEl.addEventListener('click', (e) => {
-    if(e.target.closest('[data-clipname]')) return;
     const removeBtn = e.target.closest('[data-remove]');
     if(removeBtn){
       const idx = parseInt(removeBtn.dataset.remove, 10);
@@ -1628,22 +1582,17 @@
   });
 
   const tabPlaylist = document.getElementById('tabPlaylist');
-  const tabWeb = document.getElementById('tabWeb');
   const tabFree = document.getElementById('tabFree');
   const panelPlaylist = document.getElementById('panelPlaylist');
-  const panelWeb = document.getElementById('panelWeb');
   const panelFree = document.getElementById('panelFree');
-  const webSearchInput = document.getElementById('webSearchInput');
-  const webSearchBtn = document.getElementById('webSearchBtn');
-  const webResults = document.getElementById('webResults');
   const freeSearchInput = document.getElementById('freeSearchInput');
   const freeSearchBtn = document.getElementById('freeSearchBtn');
   const freeResults = document.getElementById('freeResults');
   const genreChips = document.getElementById('genreChips');
 
   function activateTab(tabBtn, panel){
-    [tabHome, tabPlaylist, tabWeb, tabFree].forEach(b => b.classList.remove('active'));
-    [panelHome, panelPlaylist, panelWeb, panelFree].forEach(p => p.classList.remove('active'));
+    [tabHome, tabPlaylist, tabFree].forEach(b => b.classList.remove('active'));
+    [panelHome, panelPlaylist, panelFree].forEach(p => p.classList.remove('active'));
     tabBtn.classList.add('active');
     panel.classList.add('active');
   }
@@ -1651,28 +1600,21 @@
   const panelHome = document.getElementById('panelHome');
   tabHome.addEventListener('click', () => { activateTab(tabHome, panelHome); renderHome(); });
   tabPlaylist.addEventListener('click', () => activateTab(tabPlaylist, panelPlaylist));
-  tabWeb.addEventListener('click', () => activateTab(tabWeb, panelWeb));
   tabFree.addEventListener('click', () => activateTab(tabFree, panelFree));
   panelHome.classList.add('active');
 
   let previewAudio = null;
   let previewPlayingId = null;
-  let activeWebSearchCleanup = null;
 
   function syncMiniBars(){
     const actuallyPlaying = previewPlayingId != null && previewAudio && !previewAudio.paused;
-    [webResults, freeResults].forEach(container => {
-      container.querySelectorAll('.mini-bars[data-mbid]').forEach(el => {
-        el.classList.toggle('playing', actuallyPlaying && el.dataset.mbid === String(previewPlayingId));
-      });
+    freeResults.querySelectorAll('.mini-bars[data-mbid]').forEach(el => {
+      el.classList.toggle('playing', actuallyPlaying && el.dataset.mbid === String(previewPlayingId));
     });
     syncPlayButtonHighlight(actuallyPlaying);
   }
 
   function syncPlayButtonHighlight(actuallyPlaying){
-    webResults.querySelectorAll('button[data-preview]').forEach(btn => {
-      btn.classList.toggle('playing-circle-btn', !!actuallyPlaying && btn.dataset.preview === String(previewPlayingId));
-    });
     freeResults.querySelectorAll('button[data-iaplay]').forEach(btn => {
       btn.classList.toggle('playing-circle-btn', !!actuallyPlaying && btn.dataset.iaplay === String(previewPlayingId));
     });
@@ -1688,172 +1630,6 @@
     previewPlayingId = null;
     syncMiniBars();
   }
-
-  function runWebSearch(){
-    const term = webSearchInput.value.trim();
-    if(!term) return;
-    if(activeWebSearchCleanup){ activeWebSearchCleanup(); activeWebSearchCleanup = null; }
-    webResults.innerHTML = '<div class="web-loading">Buscando…</div>';
-    stopPreview();
-
-    const cbName = 'itunesCB_' + Date.now() + '_' + Math.floor(Math.random()*10000);
-    const script = document.createElement('script');
-    let finished = false;
-
-    const cleanup = () => {
-      delete window[cbName];
-      if(script.parentNode) script.parentNode.removeChild(script);
-    };
-    activeWebSearchCleanup = () => { finished = true; clearTimeout(timeoutId); cleanup(); };
-
-    const timeoutId = setTimeout(() => {
-      if(finished) return;
-      finished = true;
-      cleanup();
-      webResults.innerHTML = '<div class="web-loading">Não foi possível buscar agora. Confira sua conexão e tente de novo.</div>';
-    }, 9000);
-
-    window[cbName] = function(data){
-      if(finished) return;
-      finished = true;
-      clearTimeout(timeoutId);
-      cleanup();
-      activeWebSearchCleanup = null;
-      renderWebResults((data && data.results) || []);
-    };
-
-    script.onerror = function(){
-      if(finished) return;
-      finished = true;
-      clearTimeout(timeoutId);
-      cleanup();
-      activeWebSearchCleanup = null;
-      webResults.innerHTML = '<div class="web-loading">Não foi possível buscar agora. Confira sua conexão e tente de novo.</div>';
-    };
-
-    script.src = 'https://itunes.apple.com/search?term=' + encodeURIComponent(term) + '&media=all&entity=musicTrack,musicVideo&limit=24&callback=' + cbName;
-    document.body.appendChild(script);
-  }
-
-  function renderWebResults(results){
-    if(!results.length){
-      webResults.innerHTML = '<div class="web-loading">Nada encontrado.</div>';
-      return;
-    }
-    webResults.innerHTML = results.map(r => `
-      <div class="web-item" data-id="${escapeHtml(String(r.trackId))}">
-        <img src="${escapeHtml(r.artworkUrl60 || r.artworkUrl100 || '')}" alt="">
-        <div class="web-item-info">
-          <div class="web-item-name" data-preview="${escapeHtml(String(r.trackId))}" data-url="${escapeHtml(r.previewUrl || '')}" style="cursor:pointer;">${escapeHtml(r.trackName || 'Sem título')}<span class="mini-bars" data-mbid="${escapeHtml(String(r.trackId))}"><span></span><span></span><span></span></span></div>
-          <div class="web-item-artist">${escapeHtml(r.artistName || '')}${r.trackTimeMillis ? ' · ' + escapeHtml(fmtDuration(r.trackTimeMillis)) : ''}</div>
-        </div>
-        <div class="web-item-actions">
-          <button data-preview="${escapeHtml(String(r.trackId))}" data-url="${escapeHtml(r.previewUrl || '')}" title="Ouvir prévia (30s)">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
-          </button>
-          ${r.kind === 'music-video' ? `
-          <button class="clip-btn" data-clip="${escapeHtml(String(r.trackId))}" title="Assistir ao clipe">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg>
-          </button>` : `
-          <button data-addweb="${escapeHtml(String(r.trackId))}" title="Adicionar à playlist (prévia 30s)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          </button>`}
-          <a href="${escapeHtml('https://open.spotify.com/search/' + encodeURIComponent((r.trackName||'') + ' ' + (r.artistName||'')))}" target="_blank" rel="noopener" title="Ouvir online no Spotify" style="color:#1DB954;">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm4.59 14.42c-.19.31-.59.4-.9.21-2.47-1.51-5.58-1.85-9.24-1.01-.35.08-.71-.14-.79-.49-.08-.35.14-.71.49-.79 4-.91 7.44-.52 10.22 1.18.31.19.4.59.22.9zm1.22-2.72c-.24.39-.74.51-1.13.28-2.83-1.74-7.14-2.24-10.49-1.23-.43.13-.89-.11-1.02-.54-.13-.43.11-.89.54-1.02 3.83-1.16 8.59-.6 11.83 1.39.39.24.51.74.27 1.12zm.11-2.83C14.6 8.86 9.48 8.69 6.5 9.62c-.52.16-1.07-.13-1.23-.65-.16-.52.13-1.07.65-1.23 3.43-1.07 9.13-.86 12.73 1.31.47.28.62.89.34 1.36-.28.47-.89.62-1.36.34z"></path></svg>
-          </a>
-          <a href="${escapeHtml(r.trackViewUrl || '#')}" target="_blank" rel="noopener" title="Ouvir completa (Apple Music)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="7" y1="17" x2="17" y2="7"></line><polyline points="7 7 17 7 17 17"></polyline></svg>
-          </a>
-        </div>
-      </div>
-    `).join('');
-    window._webResultsData = {};
-    results.forEach(r => window._webResultsData[r.trackId] = r);
-  }
-
-  webSearchBtn.addEventListener('click', runWebSearch);
-  webSearchInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') runWebSearch(); });
-
-  webResults.addEventListener('click', (e) => {
-    const clipBtn = e.target.closest('[data-clip]');
-    if(clipBtn){
-      const id = clipBtn.dataset.clip;
-      const r = window._webResultsData && window._webResultsData[id];
-      if(!r || !r.previewUrl) return;
-      openCine(r.previewUrl, r.trackName || '', r.artistName || '');
-      return;
-    }
-    const previewBtn = e.target.closest('[data-preview]');
-    if(previewBtn){
-      const id = previewBtn.dataset.preview;
-      const url = previewBtn.dataset.url;
-      if(!url) return;
-      if(previewPlayingId === id){
-        stopPreview();
-        previewBtn.classList.remove('playing-preview');
-        refreshNowPlayingFromPlaylist();
-        return;
-      }
-      stopPreview();
-      audio.pause(); state.isPlaying = false; updatePlayUI();
-      previewAudio = new Audio(url);
-      previewAudio.volume = audio.volume;
-      previewAudio.play();
-      previewPlayingId = id;
-      stopRealEqualizer();
-      syncMiniBars();
-      const rMeta = window._webResultsData && window._webResultsData[id];
-      showNowPlaying((rMeta && rMeta.trackName) || 'Prévia', (rMeta && rMeta.artistName) || '', true);
-      previewAudio.addEventListener('ended', () => { previewPlayingId = null; previewAudio = null; syncMiniBars(); refreshNowPlayingFromPlaylist(); });
-      return;
-    }
-    const addBtn = e.target.closest('[data-addweb]');
-    if(addBtn){
-      const id = addBtn.dataset.addweb;
-      const r = window._webResultsData && window._webResultsData[id];
-      const pl = currentPlaylist();
-      if(!r || !pl) return;
-      if(!r.previewUrl){
-        addBtn.textContent = '—';
-        return;
-      }
-      pl.tracks.push({
-        id: uid(),
-        name: r.trackName + ' (prévia 30s)',
-        artist: r.artistName,
-        url: r.previewUrl,
-        missing: false
-      });
-      renderPlaylist();
-      saveStructure();
-      addBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
-    }
-  });
-
-  const cineModal = document.getElementById('cineModal');
-  const cineVideo = document.getElementById('cineVideo');
-  const cineTitle = document.getElementById('cineTitle');
-  const cineArtist = document.getElementById('cineArtist');
-  const cineClose = document.getElementById('cineClose');
-
-  function openCine(videoUrl, title, artist){
-    stopPreview();
-    audio.pause(); state.isPlaying = false; updatePlayUI();
-    cineTitle.textContent = title;
-    cineArtist.textContent = artist;
-    cineVideo.src = videoUrl;
-    cineModal.classList.add('open');
-    cineVideo.play().catch(()=>{});
-  }
-  function closeCine(){
-    cineVideo.pause();
-    cineVideo.src = '';
-    cineModal.classList.remove('open');
-  }
-  cineClose.addEventListener('click', closeCine);
-  cineModal.addEventListener('click', (e) => {
-    if(e.target === cineModal) closeCine();
-  });
 
   // ---------- instalação com um toque ----------
   const installBtn = document.getElementById('installBtn');
@@ -1947,57 +1723,6 @@
     if(e.target === qrModal) qrModal.classList.remove('open');
   });
 
-  function findAndOpenClip(name, artist, triggerBtn){
-    const term = (name + ' ' + artist).trim();
-    if(!term) return;
-    const originalHtml = triggerBtn ? triggerBtn.innerHTML : null;
-    if(triggerBtn) triggerBtn.innerHTML = '…';
-    const cbName = 'clipCB_' + Date.now() + '_' + Math.floor(Math.random()*10000);
-    const script = document.createElement('script');
-    let finished = false;
-    const cleanup = () => {
-      delete window[cbName];
-      if(script.parentNode) script.parentNode.removeChild(script);
-    };
-    const timeoutId = setTimeout(() => {
-      if(finished) return;
-      finished = true;
-      cleanup();
-      if(triggerBtn) triggerBtn.innerHTML = originalHtml;
-      statusLabel.textContent = 'Não foi possível buscar o clipe agora';
-    }, 9000);
-    window[cbName] = function(data){
-      if(finished) return;
-      finished = true;
-      clearTimeout(timeoutId);
-      cleanup();
-      if(triggerBtn) triggerBtn.innerHTML = originalHtml;
-      const results = (data && data.results) || [];
-      const match = results.find(r => r.previewUrl);
-      if(match){
-        openCine(match.previewUrl, match.trackName || name, match.artistName || artist);
-      } else {
-        statusLabel.textContent = 'Nenhum clipe encontrado pra essa música';
-      }
-    };
-    script.onerror = function(){
-      if(finished) return;
-      finished = true;
-      clearTimeout(timeoutId);
-      cleanup();
-      if(triggerBtn) triggerBtn.innerHTML = originalHtml;
-      statusLabel.textContent = 'Não foi possível buscar o clipe agora';
-    };
-    script.src = 'https://itunes.apple.com/search?term=' + encodeURIComponent(term) + '&media=musicVideo&entity=musicVideo&limit=5&callback=' + cbName;
-    document.body.appendChild(script);
-  }
-
-  document.addEventListener('click', (e) => {
-    const clipTrackBtn = e.target.closest('[data-clipname]');
-    if(clipTrackBtn){
-      findAndOpenClip(clipTrackBtn.dataset.clipname, clipTrackBtn.dataset.clipartist, clipTrackBtn);
-    }
-  });
 
   async function tryAutoRestoreFiles(){
     if(!supportsFilePicker) return;
@@ -2095,9 +1820,6 @@
   attachVoiceSearch(document.getElementById('micSearchInput'), searchInput, () => {
     state.filter = searchInput.value;
     renderPlaylist();
-  });
-  attachVoiceSearch(document.getElementById('micWebSearchInput'), webSearchInput, () => {
-    runWebSearch();
   });
   attachVoiceSearch(document.getElementById('micFreeSearchInput'), freeSearchInput, () => {
     runFreeSearch();
@@ -2294,9 +2016,6 @@
           <button data-iaplay="${escapeHtml(d.identifier)}" title="Tocar a música inteira">
             <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
           </button>
-          <button class="clip-track-btn" data-clipname="${escapeHtml(d.title || d.identifier)}" data-clipartist="${escapeHtml(Array.isArray(d.creator) ? d.creator.join(', ') : (d.creator || ''))}" title="Assistir ao clipe">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="23 7 16 12 23 17 23 7"></polygon><rect x="1" y="5" width="15" height="14" rx="2"></rect></svg>
-          </button>
           <button data-iaadd="${escapeHtml(d.identifier)}" title="Adicionar à playlist (faixa completa)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
           </button>
@@ -2386,7 +2105,6 @@
   });
 
   freeResults.addEventListener('click', (e) => {
-    if(e.target.closest('[data-clipname]')) return;
     const playBtn = e.target.closest('[data-iaplay]');
     if(playBtn){
       const id = playBtn.dataset.iaplay;
