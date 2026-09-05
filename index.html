@@ -24,7 +24,7 @@
 
   <div class="brand-row">
     <div class="brand">
-      <svg viewBox="0 0 40 26" class="brand-logo"><circle cx="12" cy="14" r="8" fill="#F0801E"/><path d="M12 6 Q14.5 2 19 3.2" stroke="#5a8a3a" stroke-width="1.4" fill="none" stroke-linecap="round"/><g transform="translate(23,14)"><line x1="0" y1="0" x2="6" y2="0" stroke="#e8c15a" stroke-width="1.5" stroke-linecap="round"/><path d="M6 0 L2.2 -2.2 M6 0 L2.2 2.2" stroke="#e8c15a" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></svg>
+      <svg viewBox="0 0 40 26" class="brand-logo"><circle cx="12" cy="14" r="8" fill="#F0801E"/><path d="M12 6 Q14.5 2 19 3.2" stroke="#5a8a3a" stroke-width="1.4" fill="none" stroke-linecap="round"/><g transform="translate(23,14)"><line x1="0" y1="0" x2="6" y2="0" style="stroke:var(--accent);" stroke-width="1.5" stroke-linecap="round"/><path d="M6 0 L2.2 -2.2 M6 0 L2.2 2.2" style="stroke:var(--accent);" stroke-width="1.5" fill="none" stroke-linecap="round" stroke-linejoin="round"/></g></svg>
       PROR-MUSIC
     </div>
     <div class="brand-actions">
@@ -107,6 +107,16 @@
       <div class="home-section">
         <p class="home-section-title">Explorar gêneros</p>
         <div class="home-genre-row" id="homeGenreRow"></div>
+      </div>
+
+      <div class="home-section">
+        <p class="home-section-title">Cor do app</p>
+        <div class="theme-swatch-row" id="themeSwatchRow">
+          <button class="theme-swatch" data-theme="gold" style="background:#e8c15a;" title="Dourado"></button>
+          <button class="theme-swatch" data-theme="copper" style="background:#d98b6b;" title="Cobre"></button>
+          <button class="theme-swatch" data-theme="olive" style="background:#a8b869;" title="Verde-oliva"></button>
+          <button class="theme-swatch" data-theme="blue" style="background:#6fb3c9;" title="Azul-petróleo"></button>
+        </div>
       </div>
     </div>
   </div>
@@ -222,6 +232,7 @@
     --ink-dim: #948f80;
     --accent: #e8c15a;
     --accent-dim: #6b5a2a;
+    --accent-rgb: 232,193,90;
     --danger: #d9694f;
     --missing: #7a6a3a;
   }
@@ -445,7 +456,7 @@
     opacity:1;
     animation-timing-function:ease-in-out;
     animation-iteration-count:infinite;
-    box-shadow:0 0 6px rgba(232,193,90,.55);
+    box-shadow:0 0 6px rgba(var(--accent-rgb),.55);
   }
   .bars.playing span:nth-child(1){ animation-name:bA; animation-duration:.9s; animation-delay:0s; }
   .bars.playing span:nth-child(2){ animation-name:bB; animation-duration:1.3s; animation-delay:.12s; }
@@ -704,6 +715,13 @@
     border:1px solid var(--line); border-radius:20px;
     font-size:12px; color:var(--accent); cursor:pointer; white-space:nowrap;
   }
+  .theme-swatch-row{ display:flex; gap:14px; }
+  .theme-swatch{
+    width:36px; height:36px; border-radius:50%;
+    border:2px solid transparent;
+    cursor:pointer; padding:0;
+  }
+  .theme-swatch.active{ border-color:var(--ink); }
   .web-panel.active{ display:flex; }
   .web-search-box{
     display:flex; gap:8px;
@@ -1319,6 +1337,32 @@
     return 'Boa noite 🎵';
   }
 
+  const THEME_KEY = 'pm_theme';
+  const THEMES = {
+    gold:   { accent: '#e8c15a', dim: '#6b5a2a', rgb: '232,193,90' },
+    copper: { accent: '#d98b6b', dim: '#6b4a3a', rgb: '217,139,107' },
+    olive:  { accent: '#a8b869', dim: '#525a34', rgb: '168,184,105' },
+    blue:   { accent: '#6fb3c9', dim: '#365a63', rgb: '111,179,201' }
+  };
+
+  function applyTheme(name){
+    const t = THEMES[name] || THEMES.gold;
+    const root = document.documentElement.style;
+    root.setProperty('--accent', t.accent);
+    root.setProperty('--accent-dim', t.dim);
+    root.setProperty('--accent-rgb', t.rgb);
+    document.querySelectorAll('.theme-swatch').forEach(el => {
+      el.classList.toggle('active', el.dataset.theme === name);
+    });
+    try{ localStorage.setItem(THEME_KEY, name); }catch(e){}
+  }
+
+  document.getElementById('themeSwatchRow').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-theme]');
+    if(!btn) return;
+    applyTheme(btn.dataset.theme);
+  });
+
   function renderHome(){
     document.getElementById('homeGreeting').textContent = greetingText();
 
@@ -1852,6 +1896,9 @@
   }
 
   async function init(){
+    let savedTheme = 'gold';
+    try{ savedTheme = localStorage.getItem(THEME_KEY) || 'gold'; }catch(e){}
+    applyTheme(savedTheme);
     const loaded = await loadStructure();
     if(!loaded){
       state.playlists = defaultPlaylists;
