@@ -58,6 +58,9 @@
       <div class="bars" id="bars">
         <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
       </div>
+      <button class="share-btn" id="shareBtn" title="Compartilhar" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
+      </button>
       <button class="quick-pause-btn" id="quickPauseBtn" title="Pausar/Retomar">
         <svg id="quickPauseIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
       </button>
@@ -403,6 +406,22 @@
     padding:0;
   }
   .quick-pause-btn svg{ width:12px; height:12px; }
+  .share-btn{
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink-dim);
+    width:26px;
+    height:26px;
+    border-radius:50%;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    cursor:pointer;
+    flex-shrink:0;
+    padding:0;
+    margin-right:8px;
+  }
+  .share-btn svg{ width:13px; height:13px; }
   .bars{
     display:flex;
     align-items:flex-end;
@@ -1725,6 +1744,20 @@
     if(installBtn) installBtn.style.display = 'none';
     deferredInstallPrompt = null;
   });
+
+  const shareBtn = document.getElementById('shareBtn');
+  if(shareBtn && navigator.share){
+    shareBtn.style.display = 'flex';
+    shareBtn.addEventListener('click', () => {
+      const title = nowTitle.textContent || 'PROR-MUSIC';
+      const artist = nowArtist.textContent || '';
+      navigator.share({
+        title: title,
+        text: artist ? (title + ' - ' + artist + ' 🎵') : (title + ' 🎵'),
+        url: 'https://prorural2026.github.io/pror-music/'
+      }).catch(() => {});
+    });
+  }
 
   const quickPauseBtn = document.getElementById('quickPauseBtn');
   if(quickPauseBtn){
