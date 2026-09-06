@@ -104,6 +104,16 @@
         <div class="home-recent-row" id="homeRecentRow"></div>
       </div>
 
+      <div class="home-section" id="homeMostPlayedSection" style="display:none;">
+        <p class="home-section-title">Mais tocadas</p>
+        <div class="home-recent-row" id="homeMostPlayedRow"></div>
+      </div>
+
+      <div class="home-section" id="homeDiscoverSection" style="display:none;">
+        <p class="home-section-title">Descubra</p>
+        <div class="home-discover-chip" id="homeDiscoverChip"></div>
+      </div>
+
       <div class="home-section">
         <p class="home-section-title">Explorar gêneros</p>
         <div class="home-genre-row" id="homeGenreRow"></div>
@@ -715,6 +725,21 @@
   .home-recent-name{
     font-size:11px; color:var(--ink); margin:0;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .home-discover-chip{
+    background: linear-gradient(135deg, var(--bg-raised), var(--bg));
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:14px 16px;
+    cursor:pointer;
+  }
+  .home-discover-chip .discover-label{
+    font-size:9px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--ink-dim); margin:0 0 4px;
+  }
+  .home-discover-chip .discover-genre{
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:18px; color:var(--accent); margin:0;
   }
   .home-genre-row{ display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; }
   .home-genre-chip{
@@ -1377,6 +1402,48 @@
     catch(e){ return []; }
   }
 
+  const PLAYCOUNT_KEY = 'pm_playcounts';
+  const EXPLORED_GENRES_KEY = 'pm_explored_genres';
+
+  function recordPlayCount(identifier, title, artist, thumb, isJamendoStyle, directUrl){
+    try{
+      let counts = JSON.parse(localStorage.getItem(PLAYCOUNT_KEY) || '{}');
+      const existing = counts[identifier] || { title, artist, thumb, isJamendoStyle, directUrl, count: 0 };
+      existing.count += 1;
+      existing.title = title;
+      existing.artist = artist;
+      existing.thumb = thumb;
+      existing.isJamendoStyle = isJamendoStyle;
+      existing.directUrl = directUrl;
+      counts[identifier] = existing;
+      localStorage.setItem(PLAYCOUNT_KEY, JSON.stringify(counts));
+    }catch(e){}
+  }
+
+  function getMostPlayed(limit){
+    try{
+      const counts = JSON.parse(localStorage.getItem(PLAYCOUNT_KEY) || '{}');
+      return Object.entries(counts)
+        .map(([identifier, v]) => Object.assign({identifier}, v))
+        .sort((a,b) => b.count - a.count)
+        .slice(0, limit || 6);
+    }catch(e){ return []; }
+  }
+
+  function markGenreExplored(genre){
+    try{
+      let list = JSON.parse(localStorage.getItem(EXPLORED_GENRES_KEY) || '[]');
+      if(!list.includes(genre)){ list.push(genre); localStorage.setItem(EXPLORED_GENRES_KEY, JSON.stringify(list)); }
+    }catch(e){}
+  }
+
+  function getUnexploredGenre(){
+    try{
+      const explored = JSON.parse(localStorage.getItem(EXPLORED_GENRES_KEY) || '[]');
+      return HOME_GENRES.find(g => !explored.includes(g)) || null;
+    }catch(e){ return null; }
+  }
+
   function greetingText(){
     const h = new Date().getHours();
     if(h < 12) return 'Bom dia 🎵';
@@ -1437,7 +1504,62 @@
 
     const genreRow = document.getElementById('homeGenreRow');
     genreRow.innerHTML = HOME_GENRES.map(g => `<div class="home-genre-chip" data-home-genre="${escapeHtml(g)}">${escapeHtml(g)}</div>`).join('');
+
+    const mostPlayed = getMostPlayed(6);
+    const mpSection = document.getElementById('homeMostPlayedSection');
+    const mpRow = document.getElementById('homeMostPlayedRow');
+    if(mostPlayed.length){
+      mpSection.style.display = '';
+      mpRow.innerHTML = mostPlayed.map(item => `
+        <button class="home-recent-card" data-mostplayed="${escapeHtml(item.identifier)}">
+          <div class="home-recent-art" style="${item.thumb ? '' : 'display:flex;align-items:center;justify-content:center;background:var(--bg-raised);'}">
+            ${item.thumb ? `<img src="${escapeHtml(item.thumb)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" onerror="this.style.display='none';">` : '<span style="color:var(--ink-dim);font-size:14px;">♪</span>'}
+          </div>
+          <p class="home-recent-name">${escapeHtml(item.title)}</p>
+        </button>
+      `).join('');
+    } else {
+      mpSection.style.display = 'none';
+    }
+
+    const discoverGenre = getUnexploredGenre();
+    const discoverSection = document.getElementById('homeDiscoverSection');
+    if(discoverGenre){
+      discoverSection.style.display = '';
+      document.getElementById('homeDiscoverChip').innerHTML = `
+        <p class="discover-label">Você ainda não ouviu</p>
+        <p class="discover-genre">${escapeHtml(discoverGenre)}</p>
+      `;
+    } else {
+      discoverSection.style.display = 'none';
+    }
   }
+
+  document.getElementById('homeMostPlayedRow').addEventListener('click', (e) => {
+    const card = e.target.closest('[data-mostplayed]');
+    if(!card) return;
+    const id = card.dataset.mostplayed;
+    let counts = {};
+    try{ counts = JSON.parse(localStorage.getItem(PLAYCOUNT_KEY) || '{}'); }catch(err){}
+    const item = counts[id];
+    if(!item) return;
+    activateTab(tabFree, panelFree);
+    if(!window._iaResultsData) window._iaResultsData = {};
+    window._iaResultsData[id] = {
+      identifier: id, title: item.title, creator: item.artist,
+      _jamendo: item.isJamendoStyle, _jamendoAudioUrl: item.directUrl, _thumb: item.thumb
+    };
+    playIATrack(id);
+  });
+
+  document.getElementById('homeDiscoverChip').addEventListener('click', () => {
+    const genre = getUnexploredGenre();
+    if(!genre) return;
+    activateTab(tabFree, panelFree);
+    freeSearchInput.value = genre;
+    markGenreExplored(genre);
+    runFreeSearch();
+  });
 
   document.getElementById('homeRecentRow').addEventListener('click', (e) => {
     const card = e.target.closest('[data-recent-track]');
@@ -1458,6 +1580,7 @@
     if(!chip) return;
     activateTab(tabFree, panelFree);
     freeSearchInput.value = chip.dataset.homeGenre;
+    markGenreExplored(chip.dataset.homeGenre);
     runFreeSearch();
   });
 
@@ -2295,6 +2418,9 @@
       const dMeta = window._iaResultsData && window._iaResultsData[id];
       const dArtist = dMeta ? (Array.isArray(dMeta.creator) ? dMeta.creator.join(', ') : (dMeta.creator || 'Internet Archive')) : '';
       showNowPlaying((dMeta && (dMeta.title || dMeta.identifier)) || 'Faixa livre', dArtist, true);
+      if(dMeta){
+        recordPlayCount(id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb || '', !!dMeta._jamendo, dMeta._jamendo ? dMeta._jamendoAudioUrl : '');
+      }
       previewAudio.addEventListener('ended', () => {
         previewPlayingId = null;
         previewAudio = null;
@@ -2323,6 +2449,7 @@
     genreChips.querySelectorAll('.chip').forEach(c => c.classList.remove('active'));
     chip.classList.add('active');
     freeSearchInput.value = chip.dataset.genre;
+    markGenreExplored(chip.textContent.trim());
     runFreeSearch();
   });
 
