@@ -2443,6 +2443,31 @@
     if(nearBottom) fetchNextFreeResultsBatch(true);
   });
   freeSearchInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') runFreeSearch(); });
+  let genreScrollInterval = null;
+  let genreScrollResumeTimer = null;
+
+  function startGenreAutoScroll(){
+    if(genreScrollInterval) return;
+    genreScrollInterval = setInterval(() => {
+      if(genreChips.scrollLeft + genreChips.clientWidth >= genreChips.scrollWidth - 1){
+        genreChips.scrollLeft = 0;
+      } else {
+        genreChips.scrollLeft += 1;
+      }
+    }, 30);
+  }
+
+  function pauseGenreAutoScroll(resumeDelay){
+    if(genreScrollInterval){ clearInterval(genreScrollInterval); genreScrollInterval = null; }
+    if(genreScrollResumeTimer) clearTimeout(genreScrollResumeTimer);
+    if(resumeDelay){
+      genreScrollResumeTimer = setTimeout(startGenreAutoScroll, resumeDelay);
+    }
+  }
+
+  genreChips.addEventListener('pointerdown', () => pauseGenreAutoScroll(0));
+  genreChips.addEventListener('pointerup', () => pauseGenreAutoScroll(2500));
+
   genreChips.addEventListener('click', (e) => {
     const chip = e.target.closest('.chip');
     if(!chip) return;
@@ -2451,7 +2476,10 @@
     freeSearchInput.value = chip.dataset.genre;
     markGenreExplored(chip.textContent.trim());
     runFreeSearch();
+    pauseGenreAutoScroll(2500);
   });
+
+  startGenreAutoScroll();
 
   freeResults.addEventListener('click', (e) => {
     const playBtn = e.target.closest('[data-iaplay]');
