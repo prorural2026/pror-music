@@ -2226,6 +2226,7 @@
     const url = 'https://api.jamendo.com/v3.0/tracks/?client_id=' + JAMENDO_CLIENT_ID +
       '&format=json&limit=12&offset=' + offset +
       '&namesearch=' + encodeURIComponent(term) +
+      '&order=releasedate_desc' +
       '&include=musicinfo&audioformat=mp32';
     jsonpRequest(url,
       (data) => {
@@ -2290,7 +2291,7 @@
       ' AND NOT collection:(podcasts OR radioprograms OR oldtimeradio OR OTRR OR librivoxaudio OR audio_bookandpoetry OR audio_tech OR audio_news OR audio_religion)'
     );
     const iaUrl = 'https://archive.org/advancedsearch.php?q=' + q +
-      '&fl[]=identifier&fl[]=title&fl[]=creator&fl[]=downloads&fl[]=runtime&sort[]=downloads+desc&rows=12&start=' + freeSearchState.iaStart + '&output=json';
+      '&fl[]=identifier&fl[]=title&fl[]=creator&fl[]=downloads&fl[]=runtime&fl[]=date&sort[]=date+desc&rows=12&start=' + freeSearchState.iaStart + '&output=json';
 
     let iaDone = false, jamendoDone = false, openverseDone = false;
     let iaDocs = [], jamendoDocs = [], openverseDocs = [];
