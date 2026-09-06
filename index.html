@@ -110,12 +110,19 @@
       </div>
 
       <div class="home-section">
-        <p class="home-section-title">Cor do app</p>
-        <div class="theme-swatch-row" id="themeSwatchRow">
-          <button class="theme-swatch" data-theme="gold" style="background:#e8c15a;" title="Dourado"></button>
-          <button class="theme-swatch" data-theme="copper" style="background:#d98b6b;" title="Cobre"></button>
-          <button class="theme-swatch" data-theme="olive" style="background:#a8b869;" title="Verde-oliva"></button>
+        <div class="theme-picker" id="themePicker">
+          <button class="theme-trigger" id="themeTrigger" title="Mudar a cor do app">
+            <span class="theme-trigger-dot" id="themeTriggerDot"></span>
+          </button>
+          <div class="theme-picker-expanded" id="themePickerExpanded">
+            <p class="theme-picker-label">Mudar a cor do app</p>
+            <div class="theme-swatch-row" id="themeSwatchRow">
+              <button class="theme-swatch" data-theme="gold" style="background:#e8c15a;" title="Dourado"></button>
+              <button class="theme-swatch" data-theme="copper" style="background:#d98b6b;" title="Cobre"></button>
+              <button class="theme-swatch" data-theme="olive" style="background:#a8b869;" title="Verde-oliva"></button>
           <button class="theme-swatch" data-theme="blue" style="background:#6fb3c9;" title="Azul-petróleo"></button>
+            </div>
+          </div>
         </div>
       </div>
     </div>
@@ -715,6 +722,28 @@
     border:1px solid var(--line); border-radius:20px;
     font-size:12px; color:var(--accent); cursor:pointer; white-space:nowrap;
   }
+  .theme-trigger{
+    background:none;
+    border:1px solid var(--line);
+    border-radius:50%;
+    width:26px; height:26px;
+    padding:0;
+    cursor:pointer;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .theme-trigger-dot{
+    width:14px; height:14px;
+    border-radius:50%;
+    background:var(--accent);
+    display:block;
+    transition:background .2s;
+  }
+  .theme-picker-expanded{ display:none; }
+  .theme-picker.expanded .theme-trigger{ display:none; }
+  .theme-picker.expanded .theme-picker-expanded{ display:block; }
+  .theme-picker-label{ font-size:12px; color:var(--ink-dim); margin:0 0 12px; }
   .theme-swatch-row{ display:flex; gap:14px; }
   .theme-swatch{
     width:36px; height:36px; border-radius:50%;
@@ -1354,13 +1383,20 @@
     document.querySelectorAll('.theme-swatch').forEach(el => {
       el.classList.toggle('active', el.dataset.theme === name);
     });
+    const dot = document.getElementById('themeTriggerDot');
+    if(dot) dot.style.background = t.accent;
     try{ localStorage.setItem(THEME_KEY, name); }catch(e){}
   }
+
+  document.getElementById('themeTrigger').addEventListener('click', () => {
+    document.getElementById('themePicker').classList.add('expanded');
+  });
 
   document.getElementById('themeSwatchRow').addEventListener('click', (e) => {
     const btn = e.target.closest('[data-theme]');
     if(!btn) return;
     applyTheme(btn.dataset.theme);
+    document.getElementById('themePicker').classList.remove('expanded');
   });
 
   function renderHome(){
