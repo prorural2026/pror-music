@@ -32,6 +32,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
         Instalar
       </button>
+      <button class="install-btn" id="iosInstallBtn" title="Como instalar no iPhone" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+        Instalar
+      </button>
       <button class="qr-btn" id="qrBtn" title="Ver QR code" style="display:none;">Q</button>
     </div>
     <button class="pl-switch-btn" id="plSwitchBtn">
@@ -222,6 +226,24 @@
       <div class="cine-info">
         <div class="cine-title">Aponte a câmera</div>
         <div class="cine-artist">prorural2026.github.io/pror-music</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cine-modal" id="iosInstallModal">
+    <div class="cine-inner">
+      <button class="cine-close" id="iosInstallClose" title="Fechar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+      <div class="cine-info" style="padding-top:10px;">
+        <div class="cine-title" style="margin-bottom:16px;">Como instalar no iPhone</div>
+        <div style="text-align:left; font-size:14px; color:var(--ink); line-height:1.6;">
+          <p style="margin:0 0 12px;"><strong>1.</strong> Toque no ícone de compartilhar
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
+            na barra do Safari</p>
+          <p style="margin:0 0 12px;"><strong>2.</strong> Deslize e toque em <strong>"Adicionar à Tela de Início"</strong></p>
+          <p style="margin:0;"><strong>3.</strong> Toque em <strong>"Adicionar"</strong> no canto superior</p>
+        </div>
       </div>
     </div>
   </div>
@@ -1985,6 +2007,32 @@
     if(installBtn) installBtn.style.display = 'none';
     deferredInstallPrompt = null;
   });
+
+  // ---------- instruções específicas pro iPhone (Apple não tem instalação automática) ----------
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) ||
+    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+  let isStandalone = false;
+  try{
+    isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches) || navigator.standalone === true;
+  }catch(e){}
+
+  if(isIOS && !isStandalone){
+    const iosInstallBtn = document.getElementById('iosInstallBtn');
+    const iosInstallModal = document.getElementById('iosInstallModal');
+    const iosInstallClose = document.getElementById('iosInstallClose');
+    if(iosInstallBtn) iosInstallBtn.style.display = 'flex';
+    if(iosInstallBtn && iosInstallModal){
+      iosInstallBtn.addEventListener('click', () => iosInstallModal.classList.add('open'));
+    }
+    if(iosInstallClose && iosInstallModal){
+      iosInstallClose.addEventListener('click', () => iosInstallModal.classList.remove('open'));
+    }
+    if(iosInstallModal){
+      iosInstallModal.addEventListener('click', (e) => {
+        if(e.target === iosInstallModal) iosInstallModal.classList.remove('open');
+      });
+    }
+  }
 
   const shareBtn = document.getElementById('shareBtn');
   if(shareBtn && navigator.share){
