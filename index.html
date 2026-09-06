@@ -656,7 +656,7 @@
   .home-greeting{ font-size:19px; color:var(--ink); margin:0 0 20px; }
   .home-showcase-grid{
     display:grid;
-    grid-template-columns:repeat(4, 1fr);
+    grid-template-columns:repeat(3, 1fr);
     gap:8px;
   }
   .home-showcase-item{
@@ -1360,6 +1360,7 @@
       list = list.slice(0, 12);
       localStorage.setItem(SHOWCASE_KEY, JSON.stringify(list));
     }catch(e){ }
+    renderShowcase();
   }
 
   function getShowcase(){
@@ -1454,9 +1455,7 @@
     document.getElementById('themePicker').classList.remove('expanded');
   });
 
-  function renderHome(){
-    document.getElementById('homeGreeting').textContent = greetingText();
-
+  function renderShowcase(){
     const showcase = getShowcase();
     const showcaseSection = document.getElementById('homeShowcaseSection');
     const showcaseGrid = document.getElementById('homeShowcaseGrid');
@@ -1470,6 +1469,12 @@
     } else {
       showcaseSection.style.display = 'none';
     }
+  }
+
+  function renderHome(){
+    document.getElementById('homeGreeting').textContent = greetingText();
+
+    renderShowcase();
 
     const recent = getRecentlyPlayed();
     const recentSection = document.getElementById('homeRecentSection');
