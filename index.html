@@ -2404,8 +2404,21 @@
     fetchIAAudioUrl(identifier, cb);
   }
 
+  let prefetchCache = {};
+
+  function prefetchNextTrack(currentId){
+    const list = window._iaResultsList || [];
+    const idx = list.findIndex(d => d.identifier === currentId);
+    if(idx === -1 || idx + 1 >= list.length) return;
+    const nextId = list[idx + 1].identifier;
+    if(prefetchCache[nextId]) return;
+    fetchPlayableUrl(nextId, (url) => {
+      if(url) prefetchCache[nextId] = url;
+    });
+  }
+
   function playIATrack(id, onSettled){
-    fetchPlayableUrl(id, (url) => {
+    function startPlayback(url){
       if(onSettled) onSettled();
       if(!url) return;
       stopPreview();
@@ -2422,6 +2435,7 @@
       if(dMeta){
         recordPlayCount(id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb || '', !!dMeta._jamendo, dMeta._jamendo ? dMeta._jamendoAudioUrl : '');
       }
+      prefetchNextTrack(id);
       previewAudio.addEventListener('ended', () => {
         previewPlayingId = null;
         previewAudio = null;
@@ -2434,7 +2448,15 @@
           refreshNowPlayingFromPlaylist();
         }
       });
-    });
+    }
+
+    if(prefetchCache[id]){
+      const cachedUrl = prefetchCache[id];
+      delete prefetchCache[id];
+      startPlayback(cachedUrl);
+    } else {
+      fetchPlayableUrl(id, startPlayback);
+    }
   }
 
   freeSearchBtn.addEventListener('click', runFreeSearch);
