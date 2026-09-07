@@ -1610,7 +1610,7 @@
     showNowPlaying(t.name, t.artist || 'Faixa local', autoplay);
     if(!autoplay) statusLabel.textContent = 'Pronto para tocar';
     if(autoplay){
-      audio.play().then(()=>{ state.isPlaying = true; updatePlayUI(); }).catch(()=>{});
+      audio.play().then(()=>{ state.isPlaying = true; updatePlayUI(); fadeInVolume(); }).catch(()=>{});
       recordRecentlyPlayed(t.id, pl.id, t.name, t.artist || 'Faixa local');
       recordShowcase('pl:' + t.id, t.name, t.artist || 'Faixa local', '', 'playlist', { playlistId: pl.id, trackId: t.id });
     }
@@ -1809,15 +1809,42 @@
     }
   });
 
+  const CROSSFADE_SECONDS = 3;
+  let volumeTransitionActive = false;
+
   audio.addEventListener('timeupdate', () => {
     if(!isFinite(audio.duration)) return;
     seek.value = (audio.currentTime / audio.duration) * 100 || 0;
     curTime.textContent = fmtTime(audio.currentTime);
+    if(volumeTransitionActive) return;
+    const remaining = audio.duration - audio.currentTime;
+    if(remaining <= CROSSFADE_SECONDS && remaining > 0 && !audio.paused){
+      audio.volume = Math.max(0, remaining / CROSSFADE_SECONDS);
+    } else if(remaining > CROSSFADE_SECONDS && audio.volume < 1){
+      audio.volume = 1;
+    }
   });
   audio.addEventListener('loadedmetadata', () => { durTime.textContent = fmtTime(audio.duration); });
   audio.addEventListener('ended', () => { nextTrack(); });
   audio.addEventListener('play', () => { state.isPlaying = true; updatePlayUI(); });
   audio.addEventListener('pause', () => { state.isPlaying = false; updatePlayUI(); });
+
+  function fadeInVolume(){
+    volumeTransitionActive = true;
+    const steps = 20;
+    const stepMs = (CROSSFADE_SECONDS * 1000) / steps;
+    let i = 0;
+    audio.volume = 0;
+    const fadeInterval = setInterval(() => {
+      i++;
+      audio.volume = Math.min(1, i / steps);
+      if(i >= steps){
+        clearInterval(fadeInterval);
+        audio.volume = 1;
+        volumeTransitionActive = false;
+      }
+    }, stepMs);
+  }
   let consecutiveAudioErrors = 0;
   audio.addEventListener('error', () => {
     if(state.currentIndex === -1) return;
