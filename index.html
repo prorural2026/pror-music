@@ -70,7 +70,7 @@
       <button class="share-btn" id="shareBtn" title="Compartilhar" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
       </button>
-      <button class="share-btn" id="sleepTimerBtn" title="Temporizador pra dormir">
+      <button class="share-btn" id="sleepTimerBtn" title="Desligar em">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l3 2"></path><path d="M9 2h6"></path></svg>
       </button>
       <button class="quick-pause-btn" id="quickPauseBtn" title="Pausar/Retomar">
@@ -220,7 +220,7 @@
 
   <div class="sheet-backdrop" id="sleepSheetBackdrop">
     <div class="sheet">
-      <h3>Temporizador pra dormir</h3>
+      <h3 id="sleepSheetTitle">Desligar em</h3>
       <div class="sleep-options" id="sleepOptions">
         <button class="sleep-option" data-minutes="15">15 minutos</button>
         <button class="sleep-option" data-minutes="30">30 minutos</button>
@@ -2024,17 +2024,21 @@
   let sleepCountdownInterval = null;
 
   function updateSleepStatusNote(){
+    const sleepSheetTitle = document.getElementById('sleepSheetTitle');
     if(!sleepEndsAt){
       sleepStatusNote.textContent = 'A música para sozinha depois do tempo escolhido.';
+      if(sleepSheetTitle) sleepSheetTitle.textContent = 'Desligar em';
       return;
     }
     const remainingMs = sleepEndsAt - Date.now();
     if(remainingMs <= 0){
       sleepStatusNote.textContent = 'A música para sozinha depois do tempo escolhido.';
+      if(sleepSheetTitle) sleepSheetTitle.textContent = 'Desligar em';
       return;
     }
     const mins = Math.ceil(remainingMs / 60000);
     sleepStatusNote.textContent = 'Toca por mais ' + mins + ' minuto' + (mins === 1 ? '' : 's') + '.';
+    if(sleepSheetTitle) sleepSheetTitle.textContent = 'Desligar em ' + mins + ' min';
   }
 
   function clearSleepTimer(){
