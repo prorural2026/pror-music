@@ -115,22 +115,6 @@
         <div class="home-genre-row" id="homeGenreRow"></div>
       </div>
 
-      <div class="home-section">
-        <div class="theme-picker" id="themePicker">
-          <button class="theme-trigger" id="themeTrigger" title="Mudar a cor do app">
-            <span class="theme-trigger-dot" id="themeTriggerDot"></span>
-          </button>
-          <div class="theme-picker-expanded" id="themePickerExpanded">
-            <p class="theme-picker-label">Mudar a cor do app</p>
-            <div class="theme-swatch-row" id="themeSwatchRow">
-              <button class="theme-swatch" data-theme="gold" style="background:#e8c15a;" title="Dourado"></button>
-              <button class="theme-swatch" data-theme="copper" style="background:#d98b6b;" title="Cobre"></button>
-              <button class="theme-swatch" data-theme="olive" style="background:#a8b869;" title="Verde-oliva"></button>
-          <button class="theme-swatch" data-theme="blue" style="background:#6fb3c9;" title="Azul-petróleo"></button>
-            </div>
-          </div>
-        </div>
-      </div>
     </div>
   </div>
 
@@ -754,35 +738,6 @@
     border:1px solid var(--line); border-radius:20px;
     font-size:12px; color:var(--accent); cursor:pointer; white-space:nowrap;
   }
-  .theme-trigger{
-    background:none;
-    border:1px solid var(--line);
-    border-radius:50%;
-    width:26px; height:26px;
-    padding:0;
-    cursor:pointer;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-  }
-  .theme-trigger-dot{
-    width:14px; height:14px;
-    border-radius:50%;
-    background:var(--accent);
-    display:block;
-    transition:background .2s;
-  }
-  .theme-picker-expanded{ display:none; }
-  .theme-picker.expanded .theme-trigger{ display:none; }
-  .theme-picker.expanded .theme-picker-expanded{ display:block; }
-  .theme-picker-label{ font-size:12px; color:var(--ink-dim); margin:0 0 12px; }
-  .theme-swatch-row{ display:flex; gap:14px; }
-  .theme-swatch{
-    width:36px; height:36px; border-radius:50%;
-    border:2px solid transparent;
-    cursor:pointer; padding:0;
-  }
-  .theme-swatch.active{ border-color:var(--ink); }
   .web-panel.active{ display:flex; }
   .web-search-box{
     display:flex; gap:8px;
@@ -1475,39 +1430,6 @@
       return HOME_GENRES.find(g => !explored.includes(g)) || null;
     }catch(e){ return null; }
   }
-
-  const THEME_KEY = 'pm_theme';
-  const THEMES = {
-    gold:   { accent: '#e8c15a', dim: '#6b5a2a', rgb: '232,193,90' },
-    copper: { accent: '#d98b6b', dim: '#6b4a3a', rgb: '217,139,107' },
-    olive:  { accent: '#a8b869', dim: '#525a34', rgb: '168,184,105' },
-    blue:   { accent: '#6fb3c9', dim: '#365a63', rgb: '111,179,201' }
-  };
-
-  function applyTheme(name){
-    const t = THEMES[name] || THEMES.gold;
-    const root = document.documentElement.style;
-    root.setProperty('--accent', t.accent);
-    root.setProperty('--accent-dim', t.dim);
-    root.setProperty('--accent-rgb', t.rgb);
-    document.querySelectorAll('.theme-swatch').forEach(el => {
-      el.classList.toggle('active', el.dataset.theme === name);
-    });
-    const dot = document.getElementById('themeTriggerDot');
-    if(dot) dot.style.background = t.accent;
-    try{ localStorage.setItem(THEME_KEY, name); }catch(e){}
-  }
-
-  document.getElementById('themeTrigger').addEventListener('click', () => {
-    document.getElementById('themePicker').classList.add('expanded');
-  });
-
-  document.getElementById('themeSwatchRow').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-theme]');
-    if(!btn) return;
-    applyTheme(btn.dataset.theme);
-    document.getElementById('themePicker').classList.remove('expanded');
-  });
 
   function renderShowcase(){
     const showcase = getShowcase();
@@ -2237,9 +2159,6 @@
   }
 
   async function init(){
-    let savedTheme = 'gold';
-    try{ savedTheme = localStorage.getItem(THEME_KEY) || 'gold'; }catch(e){}
-    applyTheme(savedTheme);
     const loaded = await loadStructure();
     if(!loaded){
       state.playlists = defaultPlaylists;
