@@ -168,7 +168,12 @@
       <button class="chip" data-genre="classical orchestra">Clássica</button>
       <button class="chip" data-genre="pop">Pop</button>
     </div>
-    <div class="web-results" id="freeResults"></div>
+    <div class="web-results" id="freeResults">
+      <div class="empty-state">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" style="margin:0 auto 12px;display:block;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
+        Busque por gênero ou artista.<br>Internet Archive, Jamendo e Openverse, tudo licenciado e gratuito.
+      </div>
+    </div>
   </div>
 
   <div class="tabs">
@@ -879,6 +884,15 @@
     color:var(--ink-dim);
     font-size:13px;
   }
+  .mini-spinner{
+    display:inline-block;
+    width:13px; height:13px;
+    border:2px solid var(--ink-dim);
+    border-top-color:var(--accent);
+    border-radius:50%;
+    animation:spin .7s linear infinite;
+  }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
   .sheet-backdrop{
     position:absolute; top:0; left:0; right:0; bottom:58px;
     background:rgba(0,0,0,.55);
@@ -2598,7 +2612,7 @@
         return;
       }
       const originalHtml = playBtn.innerHTML;
-      playBtn.innerHTML = '…';
+      playBtn.innerHTML = '<span class="mini-spinner"></span>';
       playIATrack(id, () => { playBtn.innerHTML = originalHtml; });
       return;
     }
@@ -2609,7 +2623,7 @@
       const pl = currentPlaylist();
       if(!d || !pl) return;
       const originalHtml = addBtn.innerHTML;
-      addBtn.innerHTML = '…';
+      addBtn.innerHTML = '<span class="mini-spinner"></span>';
       fetchPlayableUrl(id, (url) => {
         if(!url){ addBtn.innerHTML = originalHtml; return; }
         pl.tracks.push({
@@ -2630,7 +2644,7 @@
       const d = window._iaResultsData && window._iaResultsData[id];
       if(!d) return;
       const originalHtml = downloadBtn.innerHTML;
-      downloadBtn.innerHTML = '…';
+      downloadBtn.innerHTML = '<span class="mini-spinner"></span>';
       fetchPlayableUrl(id, (url) => {
         downloadBtn.innerHTML = originalHtml;
         if(!url) return;
