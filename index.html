@@ -93,7 +93,6 @@
         <div class="home-showcase-grid" id="homeShowcaseGrid"></div>
       </div>
 
-      <p class="home-greeting" id="homeGreeting">Olá 🎵</p>
 
       <div class="home-section" id="homeRecentSection" style="display:none;">
         <p class="home-section-title">Tocadas recentemente</p>
@@ -1469,13 +1468,6 @@
     }catch(e){ return null; }
   }
 
-  function greetingText(){
-    const h = new Date().getHours();
-    if(h < 12) return 'Bom dia 🎵';
-    if(h < 18) return 'Boa tarde 🎵';
-    return 'Boa noite 🎵';
-  }
-
   const THEME_KEY = 'pm_theme';
   const THEMES = {
     gold:   { accent: '#e8c15a', dim: '#6b5a2a', rgb: '232,193,90' },
@@ -1526,8 +1518,6 @@
   }
 
   function renderHome(){
-    document.getElementById('homeGreeting').textContent = greetingText();
-
     renderShowcase();
 
     const recent = getRecentlyPlayed();
