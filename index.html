@@ -86,7 +86,19 @@
       <input type="range" id="seek" min="0" max="100" value="0" step="0.1" style="flex:1;">
       <span class="time right" id="durTime">0:00</span>
     </div>
+
+    <button class="upnext-trigger" id="upNextTrigger" style="display:none;">
+      A seguir
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+    </button>
   </header>
+
+  <div class="sheet-backdrop" id="upNextBackdrop">
+    <div class="sheet">
+      <h3>A seguir</h3>
+      <div id="upNextList"></div>
+    </div>
+  </div>
 
   <div class="web-panel" id="panelHome">
     <div class="home-scroll">
@@ -968,6 +980,25 @@
   }
   .pl-item:active{ background:var(--bg); }
   .pl-item.active{ background:var(--bg); }
+  .upnext-trigger{
+    background:none; border:none;
+    color:var(--ink-dim);
+    font-size:11px;
+    display:flex; align-items:center; gap:2px;
+    margin:8px 0 0 auto;
+    padding:4px 0;
+    cursor:pointer;
+  }
+  .upnext-trigger svg{ width:14px; height:14px; }
+  .upnext-item{
+    display:flex; align-items:center; gap:10px;
+    padding:10px; border-radius:10px; cursor:pointer;
+  }
+  .upnext-item:active{ background:var(--bg); }
+  .upnext-item-num{ width:20px; font-size:11px; color:var(--ink-dim); text-align:center; flex-shrink:0; }
+  .upnext-item-info{ flex:1; min-width:0; }
+  .upnext-item-name{ font-size:13px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .upnext-item-artist{ font-size:11px; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .pl-item svg{ width:16px; height:16px; color:var(--accent); flex-shrink:0; }
   .pl-name{ flex:1; font-size:14px; }
   .pl-count{ font-size:11px; color:var(--ink-dim); }
@@ -2081,6 +2112,7 @@
     previewPlayingId = null;
     syncMiniBars();
     if(typeof updateCastButtonVisibility === 'function') updateCastButtonVisibility();
+    if(typeof updateUpNextVisibility === 'function') updateUpNextVisibility();
   }
 
   // ---------- instalação com um toque ----------
@@ -2163,6 +2195,48 @@
     if(!castBtn) return;
     const castable = window._castApiAvailable && previewAudio && previewAudio.src && /^https?:/.test(previewAudio.src);
     castBtn.style.display = castable ? 'flex' : 'none';
+  }
+
+  // ---------- "A seguir" (fila da Música livre) ----------
+  const upNextTrigger = document.getElementById('upNextTrigger');
+  const upNextBackdrop = document.getElementById('upNextBackdrop');
+
+  function getUpcomingTracks(){
+    const list = window._iaResultsList || [];
+    if(!previewPlayingId) return [];
+    const idx = list.findIndex(d => d.identifier === previewPlayingId);
+    if(idx === -1) return [];
+    return list.slice(idx + 1);
+  }
+
+  function updateUpNextVisibility(){
+    if(!upNextTrigger) return;
+    upNextTrigger.style.display = getUpcomingTracks().length ? 'flex' : 'none';
+  }
+
+  if(upNextTrigger){
+    upNextTrigger.addEventListener('click', () => {
+      const upcoming = getUpcomingTracks();
+      document.getElementById('upNextList').innerHTML = upcoming.map((d, i) => `
+        <div class="upnext-item" data-upnext-id="${escapeHtml(d.identifier)}">
+          <span class="upnext-item-num">${i + 1}</span>
+          <div class="upnext-item-info">
+            <div class="upnext-item-name">${escapeHtml(d.title || d.identifier)}</div>
+            <div class="upnext-item-artist">${escapeHtml(Array.isArray(d.creator) ? d.creator.join(', ') : (d.creator || ''))}</div>
+          </div>
+        </div>
+      `).join('');
+      upNextBackdrop.classList.add('open');
+    });
+  }
+  if(upNextBackdrop){
+    upNextBackdrop.addEventListener('click', (e) => {
+      if(e.target === upNextBackdrop){ upNextBackdrop.classList.remove('open'); return; }
+      const item = e.target.closest('[data-upnext-id]');
+      if(!item) return;
+      upNextBackdrop.classList.remove('open');
+      playIATrack(item.dataset.upnextId);
+    });
   }
 
   window._onCastReady = function(){
@@ -2723,6 +2797,7 @@
         recordShowcase('ml:' + id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb || '', 'musicalivre', { identifier: id, isJamendoStyle: !!dMeta._jamendo, directUrl: dMeta._jamendo ? dMeta._jamendoAudioUrl : '' });
       }
       if(typeof updateCastButtonVisibility === 'function') updateCastButtonVisibility();
+    if(typeof updateUpNextVisibility === 'function') updateUpNextVisibility();
       prefetchNextTrack(id);
       let advanced = false;
       previewAudio.addEventListener('ended', () => {
