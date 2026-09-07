@@ -262,20 +262,6 @@
     </div>
   </div>
 
-  <div class="cine-modal" id="artistDetailModal">
-    <div class="cine-inner">
-      <button class="cine-close" id="artistDetailClose" title="Fechar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-      </button>
-      <div class="cine-info" style="padding-top:10px;">
-        <div class="home-showcase-item" id="artistDetailArt" style="width:88px;height:88px;margin:0 auto 14px;"></div>
-        <div class="cine-title" id="artistDetailTitle"></div>
-        <div class="cine-artist" id="artistDetailArtist" style="margin-bottom:18px;"></div>
-        <button id="artistDetailSearchBtn" style="background:var(--accent); color:#10100f; border:none; border-radius:20px; padding:11px 22px; font-size:13px; cursor:pointer; font-weight:600;">Buscar mais desse artista</button>
-      </div>
-    </div>
-  </div>
-
 </div>
 </section>
 
@@ -728,7 +714,13 @@
     justify-content:center;
   }
   .home-release-art img{ width:100%; height:100%; object-fit:cover; display:block; }
-  .home-release-art .showcase-fallback{ font-size:20px; }
+  .home-release-art .showcase-fallback{ font-size:20px; color:var(--ink-dim); }
+  .home-release-badge{
+    display:inline-block;
+    font-size:8px; letter-spacing:.08em; text-transform:uppercase;
+    color:var(--accent); background:rgba(var(--accent-rgb),.12);
+    padding:2px 6px; border-radius:4px; margin-bottom:4px;
+  }
   .home-release-name{
     font-size:12px; color:var(--ink); margin:0;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -1523,84 +1515,60 @@
     }
   }
 
-  // ---------- Lançamentos (fica ESCONDIDO até o ECAD liberar) ----------
-  const LANCAMENTOS_ENABLED = false;
+  // ---------- Lançamentos (cadastro manual, artistas independentes) ----------
+  // Fica ESCONDIDO até o LANCAMENTOS_ATIVO virar true.
+  // Pra cadastrar uma música nova: adicionar um objeto na lista abaixo.
+  // "releaseDate" no formato 'AAAA-MM-DD' — a faixa só aparece a partir dessa data,
+  // sozinha, sem precisar publicar o app de novo nesse dia.
+  const LANCAMENTOS_ATIVO = false;
+  const RELEASES_DATA = [
+    // Exemplo (apagar quando cadastrar o primeiro artista de verdade):
+    // { id: 'lanc1', title: 'Nome da Música', artist: 'Nome do Artista', releaseDate: '2026-09-10', audioUrl: 'https://endereco-do-arquivo.mp3', thumb: 'https://endereco-da-capa.jpg' }
+  ];
 
-  function fetchReleases(){
-    const section = document.getElementById('homeReleasesSection');
-    const grid = document.getElementById('homeReleasesGrid');
-    if(!LANCAMENTOS_ENABLED || !section || !grid) return;
-
-    const iaUrl = 'https://archive.org/advancedsearch.php?q=' +
-      encodeURIComponent('mediatype:(audio) AND collection:(opensource_audio OR netlabels OR audio_music OR etree)') +
-      '&fl[]=identifier&fl[]=title&fl[]=creator&sort[]=date+desc&rows=4&output=json';
-    const jamUrl = 'https://api.jamendo.com/v3.0/tracks/?client_id=' + JAMENDO_CLIENT_ID +
-      '&format=json&limit=4&order=releasedate_desc&include=musicinfo&audioformat=mp32';
-
-    let iaDocs = [], jamDocs = [], iaDone = false, jamDone = false;
-
-    function checkDone(){
-      if(!iaDone || !jamDone) return;
-      const combined = iaDocs.map(d => ({
-        identifier: d.identifier, title: d.title || d.identifier,
-        artist: Array.isArray(d.creator) ? d.creator.join(', ') : (d.creator || 'Internet Archive'),
-        thumb: 'https://archive.org/services/img/' + d.identifier,
-        isJamendoStyle: false
-      })).concat(jamDocs.map(t => ({
-        identifier: 'jamendo:' + t.id, title: t.name, artist: t.artist_name,
-        thumb: t.image || '', isJamendoStyle: true, directUrl: t.audio
-      })));
-      if(combined.length){
-        section.style.display = '';
-        renderReleases(combined);
-      }
-    }
-
-    jsonpRequest(iaUrl, (data) => { iaDocs = (data && data.response && data.response.docs) || []; iaDone = true; checkDone(); }, () => { iaDone = true; checkDone(); });
-    jsonpRequest(jamUrl, (data) => { jamDocs = (data && data.results) || []; jamDone = true; checkDone(); }, () => { jamDone = true; checkDone(); });
+  function getVisibleReleases(){
+    const today = new Date().toISOString().slice(0, 10);
+    return RELEASES_DATA.filter(r => r.releaseDate <= today);
   }
 
-  function renderReleases(items){
+  function renderReleases(){
+    if(!LANCAMENTOS_ATIVO) return;
+    const section = document.getElementById('homeReleasesSection');
     const grid = document.getElementById('homeReleasesGrid');
-    window._releasesData = items;
-    grid.innerHTML = items.map((item, idx) => `
-      <button class="home-release-item" data-release-idx="${idx}">
+    const visible = getVisibleReleases();
+    if(!visible.length){ section.style.display = 'none'; return; }
+    section.style.display = '';
+    grid.innerHTML = visible.map(r => `
+      <button class="home-release-item" data-release-id="${escapeHtml(r.id)}">
         <div class="home-release-art">
-          ${item.thumb ? `<img src="${escapeHtml(item.thumb)}" alt="" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=&quot;showcase-fallback&quot;>♪</span>';">` : '<span class="showcase-fallback">♪</span>'}
+          ${r.thumb ? `<img src="${escapeHtml(r.thumb)}" alt="" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=&quot;showcase-fallback&quot;>♪</span>';">` : '<span class="showcase-fallback">♪</span>'}
         </div>
-        <p class="home-release-name">${escapeHtml(item.title)}</p>
-        <p class="home-release-artist">${escapeHtml(item.artist)}</p>
+        <span class="home-release-badge">Lançamento</span>
+        <p class="home-release-name">${escapeHtml(r.title)}</p>
+        <p class="home-release-artist">${escapeHtml(r.artist)}</p>
       </button>
     `).join('');
   }
 
   document.getElementById('homeReleasesGrid').addEventListener('click', (e) => {
-    const btn = e.target.closest('[data-release-idx]');
+    const btn = e.target.closest('[data-release-id]');
     if(!btn) return;
-    const item = window._releasesData[Number(btn.dataset.releaseIdx)];
-    if(!item) return;
-    document.getElementById('artistDetailTitle').textContent = item.title;
-    document.getElementById('artistDetailArtist').textContent = item.artist;
-    const artEl = document.getElementById('artistDetailArt');
-    artEl.innerHTML = item.thumb ? `<img src="${item.thumb}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">` : '<span class="showcase-fallback">♪</span>';
-    document.getElementById('artistDetailSearchBtn').onclick = () => {
-      document.getElementById('artistDetailModal').classList.remove('open');
-      activateTab(tabFree, panelFree);
-      freeSearchInput.value = item.artist;
-      runFreeSearch();
+    const r = RELEASES_DATA.find(x => x.id === btn.dataset.releaseId);
+    if(!r) return;
+    const identifier = 'release:' + r.id;
+    if(!window._iaResultsData) window._iaResultsData = {};
+    window._iaResultsData[identifier] = {
+      identifier: identifier, title: r.title, creator: r.artist,
+      _thumb: r.thumb || '', _jamendo: true, _jamendoAudioUrl: r.audioUrl,
+      _jamendoDownloadAllowed: false
     };
-    document.getElementById('artistDetailModal').classList.add('open');
-  });
-  document.getElementById('artistDetailClose').addEventListener('click', () => {
-    document.getElementById('artistDetailModal').classList.remove('open');
-  });
-  document.getElementById('artistDetailModal').addEventListener('click', (e) => {
-    if(e.target.id === 'artistDetailModal') e.currentTarget.classList.remove('open');
+    activateTab(tabFree, panelFree);
+    playIATrack(identifier);
   });
 
   function renderHome(){
     renderShowcase();
-    if(LANCAMENTOS_ENABLED) fetchReleases();
+    renderReleases();
 
     const recent = getRecentlyPlayed();
     const recentSection = document.getElementById('homeRecentSection');
