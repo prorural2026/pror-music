@@ -70,6 +70,9 @@
       <button class="share-btn" id="shareBtn" title="Compartilhar" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
       </button>
+      <button class="share-btn" id="sleepTimerBtn" title="Temporizador pra dormir">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l3 2"></path><path d="M9 2h6"></path></svg>
+      </button>
       <button class="quick-pause-btn" id="quickPauseBtn" title="Pausar/Retomar">
         <svg id="quickPauseIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
       </button>
@@ -212,6 +215,20 @@
         <button id="newPlBtn">Criar</button>
       </div>
       <p class="save-note">A estrutura das playlists fica salva neste aparelho. Os arquivos de música em si precisam ser relinkados a cada nova sessão, por segurança do navegador.</p>
+    </div>
+  </div>
+
+  <div class="sheet-backdrop" id="sleepSheetBackdrop">
+    <div class="sheet">
+      <h3>Temporizador pra dormir</h3>
+      <div class="sleep-options" id="sleepOptions">
+        <button class="sleep-option" data-minutes="15">15 minutos</button>
+        <button class="sleep-option" data-minutes="30">30 minutos</button>
+        <button class="sleep-option" data-minutes="45">45 minutos</button>
+        <button class="sleep-option" data-minutes="60">1 hora</button>
+        <button class="sleep-option sleep-cancel" data-minutes="0" id="sleepCancelBtn" style="display:none;">Cancelar temporizador</button>
+      </div>
+      <p class="save-note" id="sleepStatusNote">A música para sozinha depois do tempo escolhido.</p>
     </div>
   </div>
 
@@ -947,6 +964,19 @@
   .save-note{
     font-size:11px; color:var(--ink-dim); margin-top:12px; line-height:1.5;
   }
+  .sleep-options{ display:flex; flex-direction:column; gap:8px; }
+  .sleep-option{
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    color:var(--ink);
+    border-radius:10px;
+    padding:14px;
+    font-size:14px;
+    text-align:left;
+    cursor:pointer;
+  }
+  .sleep-option.active{ border-color:var(--accent); color:var(--accent); }
+  .sleep-option.sleep-cancel{ color:var(--danger); border-color:var(--danger); }
   .cine-modal{
     position:fixed;
     top:0; left:0; right:0; bottom:58px;
@@ -1984,6 +2014,73 @@
   }
 
   // ---------- instalação com um toque ----------
+  // ---------- temporizador pra dormir ----------
+  const sleepSheetBackdrop = document.getElementById('sleepSheetBackdrop');
+  const sleepTimerBtn = document.getElementById('sleepTimerBtn');
+  const sleepStatusNote = document.getElementById('sleepStatusNote');
+  const sleepCancelBtn = document.getElementById('sleepCancelBtn');
+  let sleepTimeoutId = null;
+  let sleepEndsAt = null;
+  let sleepCountdownInterval = null;
+
+  function updateSleepStatusNote(){
+    if(!sleepEndsAt){
+      sleepStatusNote.textContent = 'A música para sozinha depois do tempo escolhido.';
+      return;
+    }
+    const remainingMs = sleepEndsAt - Date.now();
+    if(remainingMs <= 0){
+      sleepStatusNote.textContent = 'A música para sozinha depois do tempo escolhido.';
+      return;
+    }
+    const mins = Math.ceil(remainingMs / 60000);
+    sleepStatusNote.textContent = 'Toca por mais ' + mins + ' minuto' + (mins === 1 ? '' : 's') + '.';
+  }
+
+  function clearSleepTimer(){
+    if(sleepTimeoutId){ clearTimeout(sleepTimeoutId); sleepTimeoutId = null; }
+    if(sleepCountdownInterval){ clearInterval(sleepCountdownInterval); sleepCountdownInterval = null; }
+    sleepEndsAt = null;
+    document.querySelectorAll('.sleep-option').forEach(b => b.classList.remove('active'));
+    if(sleepCancelBtn) sleepCancelBtn.style.display = 'none';
+    updateSleepStatusNote();
+  }
+
+  function startSleepTimer(minutes){
+    clearSleepTimer();
+    sleepEndsAt = Date.now() + minutes * 60000;
+    sleepTimeoutId = setTimeout(() => {
+      audio.pause(); state.isPlaying = false; updatePlayUI();
+      if(previewAudio) previewAudio.pause();
+      clearSleepTimer();
+    }, minutes * 60000);
+    sleepCountdownInterval = setInterval(updateSleepStatusNote, 30000);
+    updateSleepStatusNote();
+    if(sleepCancelBtn) sleepCancelBtn.style.display = '';
+  }
+
+  if(sleepTimerBtn && sleepSheetBackdrop){
+    sleepTimerBtn.addEventListener('click', () => {
+      sleepSheetBackdrop.classList.add('open');
+    });
+    sleepSheetBackdrop.addEventListener('click', (e) => {
+      if(e.target === sleepSheetBackdrop) sleepSheetBackdrop.classList.remove('open');
+    });
+    document.getElementById('sleepOptions').addEventListener('click', (e) => {
+      const btn = e.target.closest('.sleep-option');
+      if(!btn) return;
+      const minutes = Number(btn.dataset.minutes);
+      if(minutes > 0){
+        document.querySelectorAll('.sleep-option').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        startSleepTimer(minutes);
+      } else {
+        clearSleepTimer();
+      }
+      sleepSheetBackdrop.classList.remove('open');
+    });
+  }
+
   const installBtn = document.getElementById('installBtn');
   let deferredInstallPrompt = null;
 
