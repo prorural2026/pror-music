@@ -49,6 +49,7 @@
       <p class="mini-player-title" id="miniTitle">Toque numa música da lista</p>
       <p class="mini-player-artist" id="miniArtist"></p>
     </div>
+    <span class="mini-player-time" id="miniTime" style="display:none;"></span>
     <button class="mini-player-btn" id="miniPlayBtn" title="Tocar/Pausar">
       <svg id="miniPlayIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
     </button>
@@ -398,6 +399,12 @@
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
+  }
+  .mini-player-time{
+    font-size:10.5px;
+    color:var(--ink-dim);
+    flex-shrink:0;
+    font-variant-numeric:tabular-nums;
   }
   .mini-player-btn{
     background:none;
@@ -1217,6 +1224,16 @@
     const sec = Math.floor(s%60).toString().padStart(2,'0');
     return m + ':' + sec;
   }
+  function updateMiniTime(current, duration){
+    const el = document.getElementById('miniTime');
+    if(!el) return;
+    if(!isFinite(duration) || duration <= 0){
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = '';
+    el.textContent = fmtTime(current) + ' / ' + fmtTime(duration);
+  }
   function escapeHtml(s){
     const d = document.createElement('div');
     d.textContent = s;
@@ -1953,6 +1970,7 @@
     if(!isFinite(audio.duration)) return;
     seek.value = (audio.currentTime / audio.duration) * 100 || 0;
     curTime.textContent = fmtTime(audio.currentTime);
+    updateMiniTime(audio.currentTime, audio.duration);
     if(volumeTransitionActive) return;
     const remaining = audio.duration - audio.currentTime;
     if(remaining <= CROSSFADE_SECONDS && remaining > 0 && !audio.paused){
@@ -2108,6 +2126,7 @@
       previewAudio.oncanplay = null;
       previewAudio.onerror = null;
       previewAudio = null;
+      updateMiniTime(0, 0);
     }
     previewPlayingId = null;
     syncMiniBars();
@@ -2808,7 +2827,9 @@
       // Rede de segurança: se o navegador não disparar "ended" (acontece com alguns
       // arquivos externos), detecta que chegou perto do fim e avança mesmo assim.
       previewAudio.addEventListener('timeupdate', () => {
-        if(advanced || !previewAudio) return;
+        if(!previewAudio) return;
+        updateMiniTime(previewAudio.currentTime, previewAudio.duration);
+        if(advanced) return;
         if(isFinite(previewAudio.duration) && previewAudio.duration > 0 &&
            previewAudio.currentTime >= previewAudio.duration - 0.35){
           advanced = true;
