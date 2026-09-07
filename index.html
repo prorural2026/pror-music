@@ -73,6 +73,9 @@
       <button class="share-btn" id="sleepTimerBtn" title="Desligar em">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l3 2"></path><path d="M9 2h6"></path></svg>
       </button>
+      <button class="share-btn" id="castBtn" title="Transmitir pra TV" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16.1A5 5 0 0 1 5.9 20"></path><path d="M2 12.05A9 9 0 0 1 9.95 20"></path><path d="M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"></path><line x1="2" y1="20" x2="2.01" y2="20"></line></svg>
+      </button>
       <button class="quick-pause-btn" id="quickPauseBtn" title="Pausar/Retomar">
         <svg id="quickPauseIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
       </button>
@@ -87,6 +90,11 @@
 
   <div class="web-panel" id="panelHome">
     <div class="home-scroll">
+
+      <div class="home-section" id="homeReleasesSection" style="display:none;">
+        <p class="home-section-title">Lançamentos</p>
+        <div class="home-releases-grid" id="homeReleasesGrid"></div>
+      </div>
 
       <div class="home-section home-hero-section" id="homeShowcaseSection" style="display:none;">
         <p class="home-section-title">Vitrine</p>
@@ -250,6 +258,20 @@
           <p style="margin:0 0 12px;"><strong>2.</strong> Deslize e toque em <strong>"Adicionar à Tela de Início"</strong></p>
           <p style="margin:0;"><strong>3.</strong> Toque em <strong>"Adicionar"</strong> no canto superior</p>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="cine-modal" id="artistDetailModal">
+    <div class="cine-inner">
+      <button class="cine-close" id="artistDetailClose" title="Fechar">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+      </button>
+      <div class="cine-info" style="padding-top:10px;">
+        <div class="home-showcase-item" id="artistDetailArt" style="width:88px;height:88px;margin:0 auto 14px;"></div>
+        <div class="cine-title" id="artistDetailTitle"></div>
+        <div class="cine-artist" id="artistDetailArtist" style="margin-bottom:18px;"></div>
+        <button id="artistDetailSearchBtn" style="background:var(--accent); color:#10100f; border:none; border-radius:20px; padding:11px 22px; font-size:13px; cursor:pointer; font-weight:600;">Buscar mais desse artista</button>
       </div>
     </div>
   </div>
@@ -682,6 +704,39 @@
   .web-panel{ display:none; flex-direction:column; flex:1; min-height:0; min-width:0; overflow:hidden; }
   .home-scroll{ flex:1; overflow-y:auto; padding:22px 20px 30px; }
   .home-greeting{ font-size:19px; color:var(--ink); margin:0 0 20px; }
+  .home-releases-grid{
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:12px;
+  }
+  .home-release-item{
+    cursor:pointer;
+    background:none;
+    border:none;
+    padding:0;
+    text-align:left;
+  }
+  .home-release-art{
+    aspect-ratio:1;
+    border-radius:10px;
+    overflow:hidden;
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    margin-bottom:8px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+  }
+  .home-release-art img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .home-release-art .showcase-fallback{ font-size:20px; }
+  .home-release-name{
+    font-size:12px; color:var(--ink); margin:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .home-release-artist{
+    font-size:10.5px; color:var(--ink-dim); margin:2px 0 0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
   .home-showcase-grid{
     display:grid;
     grid-template-columns:repeat(3, 1fr);
@@ -1032,6 +1087,13 @@
   @keyframes mbB{ 0%,100%{ height:3px; } 50%{ height:7px; } }
   @media (prefers-reduced-motion: reduce){ .mini-bars.playing span{ animation:none; height:8px; } }
 </style>
+<script>
+  window.__onGCastApiAvailable = function(isAvailable){
+    window._castApiAvailable = isAvailable;
+    if(isAvailable && window._onCastReady) window._onCastReady();
+  };
+</script>
+<script src="https://www.gstatic.com/cv/js/sender/v1/cast_sender.js?loadCastFramework=1" async></script>
 <script>
 (function(){
   const STORAGE_KEY = 'pror-music-playlists';
@@ -1461,8 +1523,84 @@
     }
   }
 
+  // ---------- Lançamentos (fica ESCONDIDO até o ECAD liberar) ----------
+  const LANCAMENTOS_ENABLED = false;
+
+  function fetchReleases(){
+    const section = document.getElementById('homeReleasesSection');
+    const grid = document.getElementById('homeReleasesGrid');
+    if(!LANCAMENTOS_ENABLED || !section || !grid) return;
+
+    const iaUrl = 'https://archive.org/advancedsearch.php?q=' +
+      encodeURIComponent('mediatype:(audio) AND collection:(opensource_audio OR netlabels OR audio_music OR etree)') +
+      '&fl[]=identifier&fl[]=title&fl[]=creator&sort[]=date+desc&rows=4&output=json';
+    const jamUrl = 'https://api.jamendo.com/v3.0/tracks/?client_id=' + JAMENDO_CLIENT_ID +
+      '&format=json&limit=4&order=releasedate_desc&include=musicinfo&audioformat=mp32';
+
+    let iaDocs = [], jamDocs = [], iaDone = false, jamDone = false;
+
+    function checkDone(){
+      if(!iaDone || !jamDone) return;
+      const combined = iaDocs.map(d => ({
+        identifier: d.identifier, title: d.title || d.identifier,
+        artist: Array.isArray(d.creator) ? d.creator.join(', ') : (d.creator || 'Internet Archive'),
+        thumb: 'https://archive.org/services/img/' + d.identifier,
+        isJamendoStyle: false
+      })).concat(jamDocs.map(t => ({
+        identifier: 'jamendo:' + t.id, title: t.name, artist: t.artist_name,
+        thumb: t.image || '', isJamendoStyle: true, directUrl: t.audio
+      })));
+      if(combined.length){
+        section.style.display = '';
+        renderReleases(combined);
+      }
+    }
+
+    jsonpRequest(iaUrl, (data) => { iaDocs = (data && data.response && data.response.docs) || []; iaDone = true; checkDone(); }, () => { iaDone = true; checkDone(); });
+    jsonpRequest(jamUrl, (data) => { jamDocs = (data && data.results) || []; jamDone = true; checkDone(); }, () => { jamDone = true; checkDone(); });
+  }
+
+  function renderReleases(items){
+    const grid = document.getElementById('homeReleasesGrid');
+    window._releasesData = items;
+    grid.innerHTML = items.map((item, idx) => `
+      <button class="home-release-item" data-release-idx="${idx}">
+        <div class="home-release-art">
+          ${item.thumb ? `<img src="${escapeHtml(item.thumb)}" alt="" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=&quot;showcase-fallback&quot;>♪</span>';">` : '<span class="showcase-fallback">♪</span>'}
+        </div>
+        <p class="home-release-name">${escapeHtml(item.title)}</p>
+        <p class="home-release-artist">${escapeHtml(item.artist)}</p>
+      </button>
+    `).join('');
+  }
+
+  document.getElementById('homeReleasesGrid').addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-release-idx]');
+    if(!btn) return;
+    const item = window._releasesData[Number(btn.dataset.releaseIdx)];
+    if(!item) return;
+    document.getElementById('artistDetailTitle').textContent = item.title;
+    document.getElementById('artistDetailArtist').textContent = item.artist;
+    const artEl = document.getElementById('artistDetailArt');
+    artEl.innerHTML = item.thumb ? `<img src="${item.thumb}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:10px;">` : '<span class="showcase-fallback">♪</span>';
+    document.getElementById('artistDetailSearchBtn').onclick = () => {
+      document.getElementById('artistDetailModal').classList.remove('open');
+      activateTab(tabFree, panelFree);
+      freeSearchInput.value = item.artist;
+      runFreeSearch();
+    };
+    document.getElementById('artistDetailModal').classList.add('open');
+  });
+  document.getElementById('artistDetailClose').addEventListener('click', () => {
+    document.getElementById('artistDetailModal').classList.remove('open');
+  });
+  document.getElementById('artistDetailModal').addEventListener('click', (e) => {
+    if(e.target.id === 'artistDetailModal') e.currentTarget.classList.remove('open');
+  });
+
   function renderHome(){
     renderShowcase();
+    if(LANCAMENTOS_ENABLED) fetchReleases();
 
     const recent = getRecentlyPlayed();
     const recentSection = document.getElementById('homeRecentSection');
@@ -1974,6 +2112,7 @@
     }
     previewPlayingId = null;
     syncMiniBars();
+    if(typeof updateCastButtonVisibility === 'function') updateCastButtonVisibility();
   }
 
   // ---------- instalação com um toque ----------
@@ -2045,6 +2184,48 @@
         clearSleepTimer();
       }
       sleepSheetBackdrop.classList.remove('open');
+    });
+  }
+
+  // ---------- Cast pra TV (só funciona no Chrome, só pra Música livre) ----------
+  const castBtn = document.getElementById('castBtn');
+  let castContext = null;
+
+  function updateCastButtonVisibility(){
+    if(!castBtn) return;
+    const castable = window._castApiAvailable && previewAudio && previewAudio.src && /^https?:/.test(previewAudio.src);
+    castBtn.style.display = castable ? 'flex' : 'none';
+  }
+
+  window._onCastReady = function(){
+    try{
+      castContext = cast.framework.CastContext.getInstance();
+      castContext.setOptions({
+        receiverApplicationId: chrome.cast.media.DEFAULT_MEDIA_RECEIVER_APP_ID,
+        autoJoinPolicy: chrome.cast.AutoJoinPolicy.ORIGIN_SCOPED
+      });
+      updateCastButtonVisibility();
+    }catch(e){}
+  };
+
+  if(castBtn){
+    castBtn.addEventListener('click', async () => {
+      if(!castContext || !previewAudio || !previewAudio.src) return;
+      try{
+        let session = castContext.getCurrentSession();
+        if(!session){
+          await castContext.requestSession();
+          session = castContext.getCurrentSession();
+        }
+        if(!session) return;
+        const mediaInfo = new chrome.cast.media.MediaInfo(previewAudio.src, 'audio/mpeg');
+        mediaInfo.metadata = new chrome.cast.media.MusicTrackMediaMetadata();
+        mediaInfo.metadata.title = nowTitle.textContent || 'PROR-MUSIC';
+        mediaInfo.metadata.artist = nowArtist.textContent || '';
+        const request = new chrome.cast.media.LoadRequest(mediaInfo);
+        await session.loadMedia(request);
+        previewAudio.pause();
+      }catch(e){}
     });
   }
 
@@ -2560,6 +2741,7 @@
         recordPlayCount(id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb || '', !!dMeta._jamendo, dMeta._jamendo ? dMeta._jamendoAudioUrl : '');
         recordShowcase('ml:' + id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb || '', 'musicalivre', { identifier: id, isJamendoStyle: !!dMeta._jamendo, directUrl: dMeta._jamendo ? dMeta._jamendoAudioUrl : '' });
       }
+      if(typeof updateCastButtonVisibility === 'function') updateCastButtonVisibility();
       prefetchNextTrack(id);
       previewAudio.addEventListener('ended', () => {
         previewPlayingId = null;
