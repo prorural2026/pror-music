@@ -1484,6 +1484,23 @@
   }
 
   const SHOWCASE_KEY = 'pm_showcase';
+  const EXCLUDED_TRACKS_KEY = 'pm_excluded_tracks';
+
+  function addExcludedTrack(id){
+    try{
+      let list = JSON.parse(localStorage.getItem(EXCLUDED_TRACKS_KEY) || '[]');
+      if(!list.includes(id)){
+        list.push(id);
+        if(list.length > 500) list = list.slice(list.length - 500);
+        localStorage.setItem(EXCLUDED_TRACKS_KEY, JSON.stringify(list));
+      }
+    }catch(e){}
+  }
+
+  function getExcludedTracks(){
+    try{ return JSON.parse(localStorage.getItem(EXCLUDED_TRACKS_KEY) || '[]'); }
+    catch(e){ return []; }
+  }
 
   function recordShowcase(uid, name, artist, thumb, kind, refId){
     try{
@@ -2678,7 +2695,9 @@
       const combined = iaDocs
         .concat(jamendoDocs.map(normalizeJamendoTrack))
         .concat(openverseDocs.map(normalizeOpenverseTrack));
-      renderFreeResults(combined, append);
+      const excluded = getExcludedTracks();
+      const filtered = combined.filter(d => !excluded.includes(d.identifier));
+      renderFreeResults(filtered, append);
     }
 
     jsonpRequest(iaUrl,
@@ -2914,6 +2933,7 @@
     if(removeBtn){
       const id = removeBtn.dataset.iaremove;
       const card = removeBtn.closest('.web-item');
+      addExcludedTrack(id);
       if(window._iaResultsList){
         window._iaResultsList = window._iaResultsList.filter(d => d.identifier !== id);
       }
