@@ -937,6 +937,7 @@
     text-decoration:none;
   }
   .web-item-actions svg{ width:13px; height:13px; }
+  .web-item-remove{ color:var(--ink-dim) !important; }
   .web-item-actions .playing-preview{ color:var(--accent); border-color:var(--accent); }
   .web-item-actions button.playing-circle-btn{
     background: radial-gradient(circle at 35% 30%, #d4f5e3, #7fd9a8 45%, #4caf7d 75%, #2e8b5f) !important;
@@ -2735,6 +2736,9 @@
           <button data-iadownload="${escapeHtml(d.identifier)}" title="Baixar pro celular (licença livre)">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
           </button>` : ''}
+          <button data-iaremove="${escapeHtml(d.identifier)}" title="Não curti, tirar da lista" class="web-item-remove">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          </button>
         </div>
       </div>
     `).join('');
@@ -2904,6 +2908,18 @@
       const originalHtml = playBtn.innerHTML;
       playBtn.innerHTML = '<span class="mini-spinner"></span>';
       playIATrack(id, () => { playBtn.innerHTML = originalHtml; });
+      return;
+    }
+    const removeBtn = e.target.closest('[data-iaremove]');
+    if(removeBtn){
+      const id = removeBtn.dataset.iaremove;
+      const card = removeBtn.closest('.web-item');
+      if(window._iaResultsList){
+        window._iaResultsList = window._iaResultsList.filter(d => d.identifier !== id);
+      }
+      if(window._iaResultsData) delete window._iaResultsData[id];
+      if(card) card.remove();
+      fetchNextFreeResultsBatch(true);
       return;
     }
     const addBtn = e.target.closest('[data-iaadd]');
