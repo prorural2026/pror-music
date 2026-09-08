@@ -131,12 +131,7 @@
 
       <div class="home-section" id="homeMostPlayedSection" style="display:none;">
         <p class="home-section-title">Mais tocadas</p>
-        <div class="home-recent-row" id="homeMostPlayedRow"></div>
-      </div>
-
-      <div class="home-section" id="homeDiscoverSection" style="display:none;">
-        <p class="home-section-title">Descubra</p>
-        <div class="home-discover-chip" id="homeDiscoverChip"></div>
+        <div class="home-mostplayed-grid" id="homeMostPlayedGrid"></div>
       </div>
 
       <div class="home-section">
@@ -775,6 +770,37 @@
   }
   .home-showcase-item img{ width:100%; height:100%; object-fit:cover; display:block; }
   .home-showcase-item .showcase-fallback{ color:var(--ink-dim); font-size:16px; }
+  .home-mostplayed-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:12px;
+  }
+  .home-mostplayed-item{
+    cursor:pointer;
+    background:none;
+    border:none;
+    padding:0;
+    text-align:left;
+  }
+  .home-mostplayed-art{
+    aspect-ratio:1;
+    border-radius:10px;
+    overflow:hidden;
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    margin-bottom:8px;
+    position:relative;
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    box-shadow:0 4px 10px rgba(0,0,0,.25);
+  }
+  .home-mostplayed-art img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .home-mostplayed-art .showcase-fallback{ font-size:18px; color:var(--ink-dim); }
+  .home-mostplayed-name{
+    font-size:11.5px; color:var(--ink); margin:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
   .home-section{ margin-bottom:26px; }
   .home-hero-section{ margin-bottom:0; }
   .home-divider{
@@ -805,22 +831,6 @@
   .home-recent-name{
     font-size:11px; color:var(--ink); margin:0;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  }
-  .home-discover-chip{
-    background: linear-gradient(135deg, var(--bg-raised), var(--bg));
-    border:1px solid var(--line);
-    border-radius:10px;
-    padding:9px 12px;
-    cursor:pointer;
-    display:inline-block;
-  }
-  .home-discover-chip .discover-label{
-    font-size:8px; letter-spacing:.1em; text-transform:uppercase;
-    color:var(--ink-dim); margin:0 0 2px;
-  }
-  .home-discover-chip .discover-genre{
-    font-family:Georgia,"Times New Roman",serif;
-    font-size:14px; color:var(--accent); margin:0;
   }
   .home-genre-row{ display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; }
   .home-genre-chip{
@@ -1578,13 +1588,6 @@
     }catch(e){}
   }
 
-  function getUnexploredGenre(){
-    try{
-      const explored = JSON.parse(localStorage.getItem(EXPLORED_GENRES_KEY) || '[]');
-      return HOME_GENRES.find(g => !explored.includes(g)) || null;
-    }catch(e){ return null; }
-  }
-
   function renderShowcase(){
     const showcase = getShowcase();
     const showcaseSection = document.getElementById('homeShowcaseSection');
@@ -1676,36 +1679,24 @@
 
     const mostPlayed = getMostPlayed(6);
     const mpSection = document.getElementById('homeMostPlayedSection');
-    const mpRow = document.getElementById('homeMostPlayedRow');
+    const mpGrid = document.getElementById('homeMostPlayedGrid');
     if(mostPlayed.length){
       mpSection.style.display = '';
-      mpRow.innerHTML = mostPlayed.map(item => `
-        <button class="home-recent-card" data-mostplayed="${escapeHtml(item.identifier)}">
-          <div class="home-recent-art" style="${item.thumb ? '' : 'display:flex;align-items:center;justify-content:center;background:var(--bg-raised);'}">
-            ${item.thumb ? `<img src="${escapeHtml(item.thumb)}" alt="" style="width:100%;height:100%;object-fit:cover;border-radius:8px;" onerror="this.style.display='none';">` : '<span style="color:var(--ink-dim);font-size:14px;">♪</span>'}
+      mpGrid.innerHTML = mostPlayed.map(item => `
+        <button class="home-mostplayed-item" data-mostplayed="${escapeHtml(item.identifier)}">
+          <div class="home-mostplayed-art">
+            ${item.thumb ? `<img src="${escapeHtml(item.thumb)}" alt="" loading="lazy" onerror="this.style.display='none';this.parentElement.innerHTML='<span class=&quot;showcase-fallback&quot;>♪</span>';">` : '<span class="showcase-fallback">♪</span>'}
             ${(item.count >= 3 && item.downloadAllowed) ? `<span class="home-download-suggest" data-mpdownload="${escapeHtml(item.identifier)}" title="Baixar pra ouvir sem internet"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg></span>` : ''}
           </div>
-          <p class="home-recent-name">${escapeHtml(item.title)}</p>
+          <p class="home-mostplayed-name">${escapeHtml(item.title)}</p>
         </button>
       `).join('');
     } else {
       mpSection.style.display = 'none';
     }
-
-    const discoverGenre = getUnexploredGenre();
-    const discoverSection = document.getElementById('homeDiscoverSection');
-    if(discoverGenre){
-      discoverSection.style.display = '';
-      document.getElementById('homeDiscoverChip').innerHTML = `
-        <p class="discover-label">Você ainda não ouviu</p>
-        <p class="discover-genre">${escapeHtml(discoverGenre)}</p>
-      `;
-    } else {
-      discoverSection.style.display = 'none';
-    }
   }
 
-  document.getElementById('homeMostPlayedRow').addEventListener('click', (e) => {
+  document.getElementById('homeMostPlayedGrid').addEventListener('click', (e) => {
     const downloadIcon = e.target.closest('[data-mpdownload]');
     if(downloadIcon){
       const id = downloadIcon.dataset.mpdownload;
@@ -1775,15 +1766,6 @@
       };
       playIATrack(item.refId.identifier);
     }
-  });
-
-  document.getElementById('homeDiscoverChip').addEventListener('click', () => {
-    const genre = getUnexploredGenre();
-    if(!genre) return;
-    activateTab(tabFree, panelFree);
-    freeSearchInput.value = genre;
-    markGenreExplored(genre);
-    runFreeSearch();
   });
 
   document.getElementById('homeRecentRow').addEventListener('click', (e) => {
