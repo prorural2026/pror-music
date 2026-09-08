@@ -19,6 +19,14 @@
 <link rel="apple-touch-icon" href="icon-192.png">
 </head>
 <body>
+<script>
+  try{
+    if(localStorage.getItem('pm_owner') !== '1'){
+      document.documentElement.style.display = 'none';
+      window.location.replace('about:blank');
+    }
+  }catch(e){}
+</script>
 <section>
 <div id="app">
 
