@@ -134,11 +134,6 @@
         <div class="home-recent-row" id="homeMostPlayedRow"></div>
       </div>
 
-      <div class="home-section" id="homeDiscoverSection" style="display:none;">
-        <p class="home-section-title">Descubra</p>
-        <div class="home-discover-chip" id="homeDiscoverChip"></div>
-      </div>
-
       <div class="home-section">
         <p class="home-section-title">Explorar gêneros</p>
         <div class="home-genre-row" id="homeGenreRow"></div>
@@ -805,22 +800,6 @@
   .home-recent-name{
     font-size:11px; color:var(--ink); margin:0;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
-  }
-  .home-discover-chip{
-    background: linear-gradient(135deg, var(--bg-raised), var(--bg));
-    border:1px solid var(--line);
-    border-radius:10px;
-    padding:9px 12px;
-    cursor:pointer;
-    display:inline-block;
-  }
-  .home-discover-chip .discover-label{
-    font-size:8px; letter-spacing:.1em; text-transform:uppercase;
-    color:var(--ink-dim); margin:0 0 2px;
-  }
-  .home-discover-chip .discover-genre{
-    font-family:Georgia,"Times New Roman",serif;
-    font-size:14px; color:var(--accent); margin:0;
   }
   .home-genre-row{ display:flex; gap:8px; overflow-x:auto; padding-bottom:2px; }
   .home-genre-chip{
@@ -1578,13 +1557,6 @@
     }catch(e){}
   }
 
-  function getUnexploredGenre(){
-    try{
-      const explored = JSON.parse(localStorage.getItem(EXPLORED_GENRES_KEY) || '[]');
-      return HOME_GENRES.find(g => !explored.includes(g)) || null;
-    }catch(e){ return null; }
-  }
-
   function renderShowcase(){
     const showcase = getShowcase();
     const showcaseSection = document.getElementById('homeShowcaseSection');
@@ -1691,18 +1663,6 @@
     } else {
       mpSection.style.display = 'none';
     }
-
-    const discoverGenre = getUnexploredGenre();
-    const discoverSection = document.getElementById('homeDiscoverSection');
-    if(discoverGenre){
-      discoverSection.style.display = '';
-      document.getElementById('homeDiscoverChip').innerHTML = `
-        <p class="discover-label">Você ainda não ouviu</p>
-        <p class="discover-genre">${escapeHtml(discoverGenre)}</p>
-      `;
-    } else {
-      discoverSection.style.display = 'none';
-    }
   }
 
   document.getElementById('homeMostPlayedRow').addEventListener('click', (e) => {
@@ -1775,15 +1735,6 @@
       };
       playIATrack(item.refId.identifier);
     }
-  });
-
-  document.getElementById('homeDiscoverChip').addEventListener('click', () => {
-    const genre = getUnexploredGenre();
-    if(!genre) return;
-    activateTab(tabFree, panelFree);
-    freeSearchInput.value = genre;
-    markGenreExplored(genre);
-    runFreeSearch();
   });
 
   document.getElementById('homeRecentRow').addEventListener('click', (e) => {
