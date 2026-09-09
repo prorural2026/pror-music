@@ -232,6 +232,17 @@
     </div>
   </div>
 
+  <div class="sheet-backdrop" id="trackMenuBackdrop">
+    <div class="sheet">
+      <h3>Opções</h3>
+      <div class="sleep-options">
+        <button class="sleep-option" data-menuaction="add">Adicionar à playlist</button>
+        <button class="sleep-option" data-menuaction="download" id="trackMenuDownload">Baixar pro celular</button>
+        <button class="sleep-option sleep-cancel" data-menuaction="remove">Não curti, tirar da lista</button>
+      </div>
+    </div>
+  </div>
+
   <div class="sheet-backdrop" id="sleepSheetBackdrop">
     <div class="sheet">
       <h3 id="sleepSheetTitle">Desligar em</h3>
@@ -926,39 +937,28 @@
   }
   .web-item-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; padding-top:2px; }
   .web-item-name{
-    font-size:11px;
+    font-size:13px;
     min-width:0;
     max-width:100%;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .web-item-artist{
-    font-size:10px;
+    font-size:10.5px;
     color:var(--ink-dim);
     min-width:0;
     max-width:100%;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
-  .web-item-actions{
-    display:flex; gap:4px; flex-shrink:0; padding-top:2px;
-  }
-  .web-item-actions button, .web-item-actions a{
-    background:var(--bg-raised);
-    border:1px solid var(--line);
-    color:var(--ink);
-    border-radius:8px;
-    width:28px; height:28px;
-    display:flex; align-items:center; justify-content:center;
+  .web-item-kebab{
+    background:none;
+    border:none;
+    color:var(--ink-dim);
+    font-size:20px;
+    line-height:1;
+    padding:8px 6px;
     cursor:pointer;
-    text-decoration:none;
-  }
-  .web-item-actions svg{ width:13px; height:13px; }
-  .web-item-remove{ color:var(--ink-dim) !important; }
-  .web-item-actions .playing-preview{ color:var(--accent); border-color:var(--accent); }
-  .web-item-actions button.playing-circle-btn{
-    background: radial-gradient(circle at 35% 30%, #d4f5e3, #7fd9a8 45%, #4caf7d 75%, #2e8b5f) !important;
-    border-color:transparent !important;
-    box-shadow: 0 0 8px rgba(124,217,168,.5);
-    color:#0d2418 !important;
+    flex-shrink:0;
+    letter-spacing:1px;
   }
   .web-loading{
     text-align:center;
@@ -2148,13 +2148,6 @@
     freeResults.querySelectorAll('.mini-bars[data-mbid]').forEach(el => {
       el.classList.toggle('playing', actuallyPlaying && el.dataset.mbid === String(previewPlayingId));
     });
-    syncPlayButtonHighlight(actuallyPlaying);
-  }
-
-  function syncPlayButtonHighlight(actuallyPlaying){
-    freeResults.querySelectorAll('button[data-iaplay]').forEach(btn => {
-      btn.classList.toggle('playing-circle-btn', !!actuallyPlaying && btn.dataset.iaplay === String(previewPlayingId));
-    });
   }
 
   function stopPreview(){
@@ -2789,29 +2782,15 @@
       return;
     }
     const html = docs.map(d => `
-      <div class="web-item" data-ia="${escapeHtml(d.identifier)}">
+      <div class="web-item" data-ia="${escapeHtml(d.identifier)}" data-iaplay="${escapeHtml(d.identifier)}" data-candownload="${(!d._jamendo || d._jamendoDownloadAllowed) ? '1' : '0'}" style="cursor:pointer;">
         <div class="web-item-art ${d._thumb ? '' : 'art-fallback'}" data-fallback="${escapeHtml(d.identifier)}">
           ${d._thumb ? `<img src="${escapeHtml(d._thumb)}" alt="" loading="lazy" onerror="this.parentElement.classList.add('art-fallback'); this.remove();">` : ''}
         </div>
         <div class="web-item-info">
-          <div class="web-item-name" data-iaplay="${escapeHtml(d.identifier)}" style="cursor:pointer;">${escapeHtml(d.title || d.identifier)}<span class="mini-bars" data-mbid="${escapeHtml(d.identifier)}"><span></span><span></span><span></span></span></div>
+          <div class="web-item-name">${escapeHtml(d.title || d.identifier)}<span class="mini-bars" data-mbid="${escapeHtml(d.identifier)}"><span></span><span></span><span></span></span></div>
           <div class="web-item-artist">${escapeHtml(Array.isArray(d.creator) ? d.creator.join(', ') : (d.creator || (d._jamendo ? 'Jamendo' : 'Internet Archive')))}${d.runtime ? ' · ' + escapeHtml(String(d.runtime)) : ''}</div>
         </div>
-        <div class="web-item-actions">
-          <button data-iaplay="${escapeHtml(d.identifier)}" title="Tocar a música inteira">
-            <svg viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
-          </button>
-          <button data-iaadd="${escapeHtml(d.identifier)}" title="Adicionar à playlist (faixa completa)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-          </button>
-          ${(!d._jamendo || d._jamendoDownloadAllowed) ? `
-          <button data-iadownload="${escapeHtml(d.identifier)}" title="Baixar pro celular (licença livre)">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
-          </button>` : ''}
-          <button data-iaremove="${escapeHtml(d.identifier)}" title="Não curti, tirar da lista" class="web-item-remove">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-          </button>
-        </div>
+        <button class="web-item-kebab" data-iamenu="${escapeHtml(d.identifier)}" title="Mais opções">⋮</button>
       </div>
     `).join('');
     if(append){
@@ -2968,7 +2947,18 @@
 
   startGenreAutoScroll();
 
+  let currentMenuTrackId = null;
+
   freeResults.addEventListener('click', (e) => {
+    const menuBtn = e.target.closest('[data-iamenu]');
+    if(menuBtn){
+      currentMenuTrackId = menuBtn.dataset.iamenu;
+      const card = menuBtn.closest('.web-item');
+      const downloadOpt = document.getElementById('trackMenuDownload');
+      if(downloadOpt) downloadOpt.style.display = (card && card.dataset.candownload === '1') ? '' : 'none';
+      document.getElementById('trackMenuBackdrop').classList.add('open');
+      return;
+    }
     const playBtn = e.target.closest('[data-iaplay]');
     if(playBtn){
       const id = playBtn.dataset.iaplay;
@@ -2977,15 +2967,21 @@
         refreshNowPlayingFromPlaylist();
         return;
       }
-      const originalHtml = playBtn.innerHTML;
-      playBtn.innerHTML = '<span class="mini-spinner"></span>';
-      playIATrack(id, () => { playBtn.innerHTML = originalHtml; });
+      playIATrack(id);
       return;
     }
-    const removeBtn = e.target.closest('[data-iaremove]');
-    if(removeBtn){
-      const id = removeBtn.dataset.iaremove;
-      const card = removeBtn.closest('.web-item');
+  });
+
+  document.getElementById('trackMenuBackdrop').addEventListener('click', (e) => {
+    if(e.target.id === 'trackMenuBackdrop'){ e.currentTarget.classList.remove('open'); return; }
+    const actionBtn = e.target.closest('[data-menuaction]');
+    if(!actionBtn || !currentMenuTrackId) return;
+    const id = currentMenuTrackId;
+    const action = actionBtn.dataset.menuaction;
+    document.getElementById('trackMenuBackdrop').classList.remove('open');
+
+    if(action === 'remove'){
+      const card = freeResults.querySelector('.web-item[data-ia="' + CSS.escape(id) + '"]');
       addExcludedTrack(id);
       if(window._iaResultsList){
         window._iaResultsList = window._iaResultsList.filter(d => d.identifier !== id);
@@ -2993,18 +2989,12 @@
       if(window._iaResultsData) delete window._iaResultsData[id];
       if(card) card.remove();
       fetchNextFreeResultsBatch(true);
-      return;
-    }
-    const addBtn = e.target.closest('[data-iaadd]');
-    if(addBtn){
-      const id = addBtn.dataset.iaadd;
+    } else if(action === 'add'){
       const d = window._iaResultsData && window._iaResultsData[id];
       const pl = currentPlaylist();
       if(!d || !pl) return;
-      const originalHtml = addBtn.innerHTML;
-      addBtn.innerHTML = '<span class="mini-spinner"></span>';
       fetchPlayableUrl(id, (url) => {
-        if(!url){ addBtn.innerHTML = originalHtml; return; }
+        if(!url) return;
         pl.tracks.push({
           id: uid(),
           name: d.title || d.identifier,
@@ -3014,18 +3004,11 @@
         });
         renderPlaylist();
         saveStructure();
-        addBtn.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"></polyline></svg>';
       });
-    }
-    const downloadBtn = e.target.closest('[data-iadownload]');
-    if(downloadBtn){
-      const id = downloadBtn.dataset.iadownload;
+    } else if(action === 'download'){
       const d = window._iaResultsData && window._iaResultsData[id];
       if(!d) return;
-      const originalHtml = downloadBtn.innerHTML;
-      downloadBtn.innerHTML = '<span class="mini-spinner"></span>';
       fetchPlayableUrl(id, (url) => {
-        downloadBtn.innerHTML = originalHtml;
         if(!url) return;
         const ext = (url.split('.').pop() || 'mp3').split('?')[0];
         const safeName = (d.title || d.identifier).replace(/[\\/:*?"<>|]/g, '').slice(0, 80);
