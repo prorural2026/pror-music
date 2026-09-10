@@ -934,6 +934,9 @@
     position:relative;
     margin-bottom:8px;
   }
+  .web-item-playing .web-item-art{
+    box-shadow:0 0 0 2px var(--accent), 0 0 14px rgba(var(--accent-rgb),.45);
+  }
   .web-item-art img{ width:100%; height:100%; object-fit:cover; display:block; }
   .web-item-art.art-fallback{
     background: linear-gradient(135deg, var(--bg-raised), #0d0d0c);
@@ -2164,6 +2167,9 @@
     const actuallyPlaying = previewPlayingId != null && previewAudio && !previewAudio.paused;
     freeResults.querySelectorAll('.mini-bars[data-mbid]').forEach(el => {
       el.classList.toggle('playing', actuallyPlaying && el.dataset.mbid === String(previewPlayingId));
+    });
+    freeResults.querySelectorAll('.web-item[data-ia]').forEach(card => {
+      card.classList.toggle('web-item-playing', actuallyPlaying && card.dataset.ia === String(previewPlayingId));
     });
   }
 
