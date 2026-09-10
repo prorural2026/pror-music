@@ -113,6 +113,15 @@
   <div class="web-panel" id="panelHome">
     <div class="home-scroll">
 
+      <div class="home-nowplaying-card" id="homeNowPlayingCard" style="display:none;">
+        <div class="home-nowplaying-art" id="homeNowPlayingArt"></div>
+        <div class="home-nowplaying-info">
+          <p class="home-nowplaying-label">Tocando agora</p>
+          <p class="home-nowplaying-title" id="homeNowPlayingTitle"></p>
+          <p class="home-nowplaying-artist" id="homeNowPlayingArtist"></p>
+        </div>
+      </div>
+
       <div class="home-section" id="homeReleasesSection" style="display:none;">
         <p class="home-section-title">Lançamentos</p>
         <div class="home-releases-grid" id="homeReleasesGrid"></div>
@@ -799,6 +808,38 @@
   .home-showcase-item .showcase-fallback{ color:var(--ink-dim); font-size:16px; }
   .home-section{ margin-bottom:26px; }
   .home-hero-section{ margin-bottom:0; }
+  .home-nowplaying-card{
+    display:flex;
+    align-items:center;
+    gap:12px;
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:12px;
+    margin-bottom:24px;
+  }
+  .home-nowplaying-art{
+    width:56px; height:56px; border-radius:8px; flex-shrink:0;
+    background: radial-gradient(circle at 35% 30%, #d4f5e3, #7fd9a8 45%, #4caf7d 75%, #2e8b5f);
+    overflow:hidden;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .home-nowplaying-art img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .home-nowplaying-art svg{ width:20px; height:20px; }
+  .home-nowplaying-info{ flex:1; min-width:0; }
+  .home-nowplaying-label{
+    font-size:9px; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--accent); margin:0 0 3px;
+  }
+  .home-nowplaying-title{
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:15px; color:var(--ink); margin:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .home-nowplaying-artist{
+    font-size:11.5px; color:var(--ink-dim); margin:2px 0 0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
   .home-divider{
     height:1px;
     background:linear-gradient(90deg, transparent, var(--line), transparent);
@@ -1466,7 +1507,7 @@
     Array.from(bars.children).forEach(el => { el.style.height = ''; el.style.background = ''; });
   }
 
-  function showNowPlaying(name, artist, isPlaying){
+  function showNowPlaying(name, artist, isPlaying, thumb){
     nowTitle.textContent = name;
     nowArtist.textContent = artist || '';
     statusLabel.textContent = isPlaying ? 'Tocando agora' : 'Pausado';
@@ -1476,6 +1517,23 @@
     const miniArtist = document.getElementById('miniArtist');
     if(miniTitle) miniTitle.textContent = name;
     if(miniArtist) miniArtist.textContent = artist || '';
+
+    const homeCard = document.getElementById('homeNowPlayingCard');
+    if(homeCard){
+      if(isPlaying){
+        homeCard.style.display = 'flex';
+        document.getElementById('homeNowPlayingTitle').textContent = name;
+        document.getElementById('homeNowPlayingArtist').textContent = artist || '';
+        const artEl = document.getElementById('homeNowPlayingArt');
+        if(thumb){
+          artEl.innerHTML = `<img src="${thumb}" alt="" onerror="this.remove();">`;
+        } else {
+          artEl.innerHTML = '<svg viewBox="0 0 24 24" fill="#0d2418"><path d="M8 5v14l11-7z"></path></svg>';
+        }
+      } else {
+        homeCard.style.display = 'none';
+      }
+    }
   }
 
   function updateQuickPauseIcon(isPlaying){
@@ -1874,14 +1932,17 @@
 
   function updatePlayUI(){
     const progressRow = document.getElementById('progressRow');
+    const homeCard = document.getElementById('homeNowPlayingCard');
     if(state.isPlaying){
       bars.classList.add('playing');
       statusLabel.textContent = 'Tocando agora';
       if(progressRow) progressRow.classList.add('visible');
+      if(homeCard && !previewAudio) homeCard.style.display = 'flex';
     } else {
       bars.classList.remove('playing');
       if(state.currentIndex !== -1) statusLabel.textContent = 'Pausado';
       if(progressRow) progressRow.classList.remove('visible');
+      if(homeCard && !previewAudio) homeCard.style.display = 'none';
     }
     if(!previewAudio) updateQuickPauseIcon(state.isPlaying);
     if(state.isPlaying && !previewAudio){
@@ -2940,7 +3001,7 @@
         const fileTitle = (f && (f.title || (f.name || '').replace(/\.[^.]+$/, ''))) || null;
         if(fileTitle) displayTitle = fileTitle;
       }
-      showNowPlaying(displayTitle, dArtist, true);
+      showNowPlaying(displayTitle, dArtist, true, dMeta && dMeta._thumb);
       if(dMeta){
         recordPlayCount(id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb || '', !!dMeta._jamendo, dMeta._jamendo ? dMeta._jamendoAudioUrl : '', !!dMeta._jamendoDownloadAllowed || !dMeta._jamendo);
         recordShowcase('ml:' + id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb || '', 'musicalivre', { identifier: id, isJamendoStyle: !!dMeta._jamendo, directUrl: dMeta._jamendo ? dMeta._jamendoAudioUrl : '' });
