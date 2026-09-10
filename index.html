@@ -812,11 +812,18 @@
     display:flex;
     align-items:center;
     gap:12px;
-    background:var(--bg-raised);
-    border:1px solid var(--line);
+    background:linear-gradient(135deg, var(--bg-raised), var(--bg));
+    border:1px solid var(--accent-dim);
     border-radius:12px;
     padding:12px;
     margin-bottom:24px;
+    box-shadow:0 4px 18px rgba(var(--accent-rgb),.18);
+    cursor:pointer;
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .home-nowplaying-card:active{
+    transform:scale(0.98);
+    box-shadow:0 2px 10px rgba(var(--accent-rgb),.22);
   }
   .home-nowplaying-art{
     width:56px; height:56px; border-radius:8px; flex-shrink:0;
@@ -2524,6 +2531,14 @@
   function togglePlayerExpanded(){
     const isExpanded = playerHeader.classList.toggle('expanded');
     miniPlayer.classList.toggle('hidden', isExpanded);
+  }
+
+  const homeNowPlayingCard = document.getElementById('homeNowPlayingCard');
+  if(homeNowPlayingCard){
+    homeNowPlayingCard.addEventListener('click', () => {
+      playerHeader.classList.add('expanded');
+      miniPlayer.classList.add('hidden');
+    });
   }
 
   if(miniPlayer){
