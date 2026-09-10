@@ -1040,6 +1040,11 @@
     border:1px solid var(--line);
     margin-bottom:8px;
   }
+  .upnext-item-current{
+    border-color:var(--accent);
+    background:rgba(var(--accent-rgb),.10);
+  }
+  .upnext-item-current .upnext-item-name{ color:var(--accent); }
   .upnext-item:active{ background:var(--bg); }
   .upnext-item-num{ width:16px; font-size:11px; color:var(--accent); text-align:center; flex-shrink:0; font-weight:700; }
   .upnext-item-art{
@@ -1830,6 +1835,8 @@
       return;
     }
     stopPreview();
+    multiTrackFiles = null;
+    multiTrackParentId = null;
     state.currentIndex = idx;
     audio.src = t.url;
     showNowPlaying(t.name, t.artist || 'Faixa local', autoplay);
@@ -2176,6 +2183,9 @@
 
   let previewAudio = null;
   let previewPlayingId = null;
+  let multiTrackFiles = null;
+  let multiTrackIndex = 0;
+  let multiTrackParentId = null;
 
   function syncMiniBars(){
     const actuallyPlaying = previewPlayingId != null && previewAudio && !previewAudio.paused;
@@ -2297,31 +2307,56 @@
 
   function updateUpNextVisibility(){
     if(!upNextTrigger) return;
-    upNextTrigger.style.display = getUpcomingTracks().length ? 'flex' : 'none';
+    const hasMultiTrackNext = !!(multiTrackFiles && multiTrackFiles.length > 1);
+    upNextTrigger.style.display = (hasMultiTrackNext || getUpcomingTracks().length) ? 'flex' : 'none';
   }
 
   if(upNextTrigger){
     upNextTrigger.addEventListener('click', () => {
-      const upcoming = getUpcomingTracks();
-      document.getElementById('upNextList').innerHTML = upcoming.map((d, i) => `
-        <div class="upnext-item" data-upnext-id="${escapeHtml(d.identifier)}">
-          <span class="upnext-item-num">${i + 1}</span>
-          <div class="upnext-item-art ${d._thumb ? '' : 'art-fallback'}">
-            ${d._thumb ? `<img src="${escapeHtml(d._thumb)}" alt="" loading="lazy" onerror="this.parentElement.classList.add('art-fallback'); this.remove();">` : ''}
+      const list = document.getElementById('upNextList');
+      if(multiTrackFiles && multiTrackFiles.length > 1){
+        list.innerHTML = multiTrackFiles.map((f, i) => {
+          const name = f.title || (f.name || '').replace(/\.[^.]+$/, '') || ('Faixa ' + (i + 1));
+          const dur = f.length ? fmtTime(Number(f.length)) : '';
+          return `
+          <div class="upnext-item ${i === multiTrackIndex ? 'upnext-item-current' : ''}" data-upnext-fileindex="${i}">
+            <span class="upnext-item-num">${i + 1}</span>
+            <div class="upnext-item-info">
+              <div class="upnext-item-name">${escapeHtml(name)}</div>
+              ${i === multiTrackIndex ? `<div class="upnext-item-artist">Tocando agora</div>` : ''}
+            </div>
+            ${dur ? `<span class="upnext-item-time">${escapeHtml(dur)}</span>` : ''}
+          </div>`;
+        }).join('');
+      } else {
+        const upcoming = getUpcomingTracks();
+        list.innerHTML = upcoming.map((d, i) => `
+          <div class="upnext-item" data-upnext-id="${escapeHtml(d.identifier)}">
+            <span class="upnext-item-num">${i + 1}</span>
+            <div class="upnext-item-art ${d._thumb ? '' : 'art-fallback'}">
+              ${d._thumb ? `<img src="${escapeHtml(d._thumb)}" alt="" loading="lazy" onerror="this.parentElement.classList.add('art-fallback'); this.remove();">` : ''}
+            </div>
+            <div class="upnext-item-info">
+              <div class="upnext-item-name">${escapeHtml(d.title || d.identifier)}</div>
+              <div class="upnext-item-artist">${escapeHtml(Array.isArray(d.creator) ? d.creator.join(', ') : (d.creator || ''))}</div>
+            </div>
+            ${d.runtime ? `<span class="upnext-item-time">${escapeHtml(String(d.runtime))}</span>` : ''}
           </div>
-          <div class="upnext-item-info">
-            <div class="upnext-item-name">${escapeHtml(d.title || d.identifier)}</div>
-            <div class="upnext-item-artist">${escapeHtml(Array.isArray(d.creator) ? d.creator.join(', ') : (d.creator || ''))}</div>
-          </div>
-          ${d.runtime ? `<span class="upnext-item-time">${escapeHtml(String(d.runtime))}</span>` : ''}
-        </div>
-      `).join('');
+        `).join('');
+      }
       upNextBackdrop.classList.add('open');
     });
   }
   if(upNextBackdrop){
     upNextBackdrop.addEventListener('click', (e) => {
       if(e.target === upNextBackdrop){ upNextBackdrop.classList.remove('open'); return; }
+      const fileItem = e.target.closest('[data-upnext-fileindex]');
+      if(fileItem){
+        upNextBackdrop.classList.remove('open');
+        const idx = Number(fileItem.dataset.upnextFileindex);
+        if(multiTrackParentId) playIATrack(multiTrackParentId, null, idx);
+        return;
+      }
       const item = e.target.closest('[data-upnext-id]');
       if(!item) return;
       upNextBackdrop.classList.remove('open');
@@ -2844,26 +2879,36 @@
     window._iaResultsList = append ? (window._iaResultsList || []).concat(docs) : docs;
   }
 
-  function fetchIAAudioUrl(identifier, cb){
+  function fetchIAAudioUrl(identifier, cb, fileIndex){
     const url = 'https://archive.org/metadata/' + encodeURIComponent(identifier);
     jsonpRequest(url,
       (data) => {
-        const files = (data && data.files) || [];
-        const audioFile = files.find(f => /\.(mp3|ogg|m4a)$/i.test(f.name || ''));
-        if(!audioFile){ cb(null); return; }
-        cb('https://archive.org/download/' + identifier + '/' + encodeURIComponent(audioFile.name));
+        const files = ((data && data.files) || []).filter(f => /\.(mp3|ogg|m4a)$/i.test(f.name || ''));
+        if(!files.length){ cb(null); return; }
+        if(files.length > 1){
+          multiTrackFiles = files;
+          multiTrackParentId = identifier;
+        } else {
+          multiTrackFiles = null;
+          multiTrackParentId = null;
+        }
+        const idx = (typeof fileIndex === 'number' && files[fileIndex]) ? fileIndex : 0;
+        multiTrackIndex = idx;
+        cb('https://archive.org/download/' + identifier + '/' + encodeURIComponent(files[idx].name));
       },
       () => cb(null)
     );
   }
 
-  function fetchPlayableUrl(identifier, cb){
+  function fetchPlayableUrl(identifier, cb, fileIndex){
     const d = window._iaResultsData && window._iaResultsData[identifier];
     if(d && d._jamendo){
+      multiTrackFiles = null;
+      multiTrackParentId = null;
       cb(d._jamendoAudioUrl || null);
       return;
     }
-    fetchIAAudioUrl(identifier, cb);
+    fetchIAAudioUrl(identifier, cb, fileIndex);
   }
 
   let prefetchCache = {};
@@ -2879,10 +2924,16 @@
     });
   }
 
-  function playIATrack(id, onSettled){
+  function playIATrack(id, onSettled, fileIndex){
     function advanceToNext(){
+      if(multiTrackFiles && multiTrackParentId === id && multiTrackIndex + 1 < multiTrackFiles.length){
+        playIATrack(id, null, multiTrackIndex + 1);
+        return;
+      }
       previewPlayingId = null;
       previewAudio = null;
+      multiTrackFiles = null;
+      multiTrackParentId = null;
       syncMiniBars();
       const list = window._iaResultsList || [];
       const idx = list.findIndex(d => d.identifier === id);
@@ -2906,7 +2957,13 @@
       syncMiniBars();
       const dMeta = window._iaResultsData && window._iaResultsData[id];
       const dArtist = dMeta ? (Array.isArray(dMeta.creator) ? dMeta.creator.join(', ') : (dMeta.creator || 'Internet Archive')) : '';
-      showNowPlaying((dMeta && (dMeta.title || dMeta.identifier)) || 'Faixa livre', dArtist, true);
+      let displayTitle = (dMeta && (dMeta.title || dMeta.identifier)) || 'Faixa livre';
+      if(multiTrackFiles && multiTrackParentId === id && multiTrackFiles.length > 1){
+        const f = multiTrackFiles[multiTrackIndex];
+        const fileTitle = (f && (f.title || (f.name || '').replace(/\.[^.]+$/, ''))) || null;
+        if(fileTitle) displayTitle = fileTitle;
+      }
+      showNowPlaying(displayTitle, dArtist, true);
       if(dMeta){
         recordPlayCount(id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb || '', !!dMeta._jamendo, dMeta._jamendo ? dMeta._jamendoAudioUrl : '', !!dMeta._jamendoDownloadAllowed || !dMeta._jamendo);
         recordShowcase('ml:' + id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb || '', 'musicalivre', { identifier: id, isJamendoStyle: !!dMeta._jamendo, directUrl: dMeta._jamendo ? dMeta._jamendoAudioUrl : '' });
@@ -2934,12 +2991,12 @@
       });
     }
 
-    if(prefetchCache[id]){
+    if(prefetchCache[id] && (typeof fileIndex !== 'number')){
       const cachedUrl = prefetchCache[id];
       delete prefetchCache[id];
       startPlayback(cachedUrl);
     } else {
-      fetchPlayableUrl(id, startPlayback);
+      fetchPlayableUrl(id, startPlayback, fileIndex);
     }
   }
 
