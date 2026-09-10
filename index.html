@@ -86,6 +86,10 @@
       <button class="share-btn" id="castBtn" title="Transmitir pra TV" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16.1A5 5 0 0 1 5.9 20"></path><path d="M2 12.05A9 9 0 0 1 9.95 20"></path><path d="M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"></path><line x1="2" y1="20" x2="2.01" y2="20"></line></svg>
       </button>
+      <button class="share-btn" id="repeatBtn" title="Repetir">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
+        <span id="repeatOneBadge" style="display:none;">1</span>
+      </button>
       <button class="quick-pause-btn" id="quickPauseBtn" title="Pausar/Retomar">
         <svg id="quickPauseIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
       </button>
@@ -537,8 +541,22 @@
     flex-shrink:0;
     padding:0;
     margin-right:8px;
+    position:relative;
   }
   .share-btn svg{ width:13px; height:13px; }
+  #repeatBtn.repeat-inactive{ color:var(--ink-dim); border-color:var(--line); }
+  #repeatOneBadge{
+    position:absolute;
+    bottom:-3px; right:-3px;
+    background:var(--accent);
+    color:#10100f;
+    font-size:8px;
+    font-weight:800;
+    width:12px; height:12px;
+    border-radius:50%;
+    display:flex; align-items:center; justify-content:center;
+    line-height:1;
+  }
   .bars{
     display:flex;
     align-items:flex-end;
@@ -1288,7 +1306,10 @@
     currentIndex: -1,
     isPlaying: false,
     filter: '',
-    linkingTrackId: null
+    linkingTrackId: null,
+    repeatMode: (function(){
+      try{ return localStorage.getItem('pm_repeat_mode') || 'all'; }catch(e){ return 'all'; }
+    })()
   };
 
   const audio = document.getElementById('audio');
@@ -1968,7 +1989,14 @@
     let idx = state.currentIndex;
     let attempts = 0;
     while(attempts < total){
-      idx = (idx + 1) % total;
+      const nextIdx = idx + 1;
+      if(state.repeatMode === 'off' && nextIdx >= total){
+        state.isPlaying = false;
+        audio.pause();
+        updatePlayUI();
+        return;
+      }
+      idx = nextIdx % total;
       attempts++;
       if(!pl.tracks[idx].missing && pl.tracks[idx].url){
         loadTrack(idx, true);
@@ -2103,7 +2131,14 @@
     }
   });
   audio.addEventListener('loadedmetadata', () => { durTime.textContent = fmtTime(audio.duration); });
-  audio.addEventListener('ended', () => { nextTrack(); });
+  audio.addEventListener('ended', () => {
+    if(state.repeatMode === 'one'){
+      audio.currentTime = 0;
+      audio.play().catch(()=>{});
+      return;
+    }
+    nextTrack();
+  });
   audio.addEventListener('play', () => { state.isPlaying = true; updatePlayUI(); });
   audio.addEventListener('pause', () => { state.isPlaying = false; updatePlayUI(); });
 
@@ -2259,6 +2294,28 @@
   // ---------- instalação com um toque ----------
   // ---------- temporizador pra dormir ----------
   const sleepSheetBackdrop = document.getElementById('sleepSheetBackdrop');
+  const repeatBtn = document.getElementById('repeatBtn');
+  const repeatOneBadge = document.getElementById('repeatOneBadge');
+
+  function updateRepeatUI(){
+    if(!repeatBtn) return;
+    repeatBtn.classList.toggle('repeat-inactive', state.repeatMode === 'off');
+    if(repeatOneBadge) repeatOneBadge.style.display = state.repeatMode === 'one' ? 'flex' : 'none';
+    const labels = { off: 'Repetir (desligado)', all: 'Repetir tudo', one: 'Repetir uma' };
+    repeatBtn.title = labels[state.repeatMode] || 'Repetir';
+  }
+
+  if(repeatBtn){
+    repeatBtn.addEventListener('click', () => {
+      const order = ['off', 'all', 'one'];
+      const next = order[(order.indexOf(state.repeatMode) + 1) % order.length];
+      state.repeatMode = next;
+      try{ localStorage.setItem('pm_repeat_mode', next); }catch(e){}
+      updateRepeatUI();
+    });
+  }
+  updateRepeatUI();
+
   const sleepTimerBtn = document.getElementById('sleepTimerBtn');
   const sleepStatusNote = document.getElementById('sleepStatusNote');
   const sleepCancelBtn = document.getElementById('sleepCancelBtn');
