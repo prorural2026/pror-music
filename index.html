@@ -1036,12 +1036,26 @@
   .upnext-item{
     display:flex; align-items:center; gap:10px;
     padding:10px; border-radius:10px; cursor:pointer;
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    margin-bottom:8px;
   }
   .upnext-item:active{ background:var(--bg); }
-  .upnext-item-num{ width:20px; font-size:11px; color:var(--ink-dim); text-align:center; flex-shrink:0; }
+  .upnext-item-num{ width:16px; font-size:11px; color:var(--accent); text-align:center; flex-shrink:0; font-weight:700; }
+  .upnext-item-art{
+    width:44px; height:44px; border-radius:8px; flex-shrink:0; overflow:hidden;
+    background:var(--bg);
+  }
+  .upnext-item-art img{ width:100%; height:100%; object-fit:cover; display:block; }
+  .upnext-item-art.art-fallback{
+    display:flex; align-items:center; justify-content:center;
+    border:1px solid var(--line);
+  }
+  .upnext-item-art.art-fallback::after{ content:'♪'; color:var(--ink-dim); font-size:15px; }
   .upnext-item-info{ flex:1; min-width:0; }
-  .upnext-item-name{ font-size:13px; color:var(--ink); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .upnext-item-name{ font-size:13.5px; color:var(--ink); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .upnext-item-artist{ font-size:11px; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+  .upnext-item-time{ font-size:10.5px; color:var(--accent); flex-shrink:0; font-variant-numeric:tabular-nums; }
   .pl-item svg{ width:16px; height:16px; color:var(--accent); flex-shrink:0; }
   .pl-name{ flex:1; font-size:14px; }
   .pl-count{ font-size:11px; color:var(--ink-dim); }
@@ -2292,10 +2306,14 @@
       document.getElementById('upNextList').innerHTML = upcoming.map((d, i) => `
         <div class="upnext-item" data-upnext-id="${escapeHtml(d.identifier)}">
           <span class="upnext-item-num">${i + 1}</span>
+          <div class="upnext-item-art ${d._thumb ? '' : 'art-fallback'}">
+            ${d._thumb ? `<img src="${escapeHtml(d._thumb)}" alt="" loading="lazy" onerror="this.parentElement.classList.add('art-fallback'); this.remove();">` : ''}
+          </div>
           <div class="upnext-item-info">
             <div class="upnext-item-name">${escapeHtml(d.title || d.identifier)}</div>
             <div class="upnext-item-artist">${escapeHtml(Array.isArray(d.creator) ? d.creator.join(', ') : (d.creator || ''))}</div>
           </div>
+          ${d.runtime ? `<span class="upnext-item-time">${escapeHtml(String(d.runtime))}</span>` : ''}
         </div>
       `).join('');
       upNextBackdrop.classList.add('open');
