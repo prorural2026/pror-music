@@ -901,15 +901,23 @@
     overflow-x:hidden;
     padding:10px 16px 90px;
     -webkit-overflow-scrolling:touch;
+    display:grid;
+    grid-template-columns:repeat(2, 1fr);
+    gap:16px 14px;
+    align-content:start;
+  }
+  .web-results > .empty-state,
+  .web-results > .web-loading{
+    grid-column:1 / -1;
   }
   .web-item{
     display:flex;
-    align-items:flex-start;
-    gap:8px;
-    padding:9px 10px;
+    flex-direction:column;
+    padding:0;
     border-radius:10px;
     min-width:0;
     max-width:100%;
+    cursor:pointer;
   }
   .web-item img{
     width:44px; height:44px;
@@ -918,11 +926,13 @@
     background:var(--bg-raised);
   }
   .web-item-art{
-    width:54px; height:54px;
-    border-radius:8px;
-    flex-shrink:0;
+    width:100%;
+    aspect-ratio:1;
+    border-radius:10px;
     overflow:hidden;
     background:var(--bg-raised);
+    position:relative;
+    margin-bottom:8px;
   }
   .web-item-art img{ width:100%; height:100%; object-fit:cover; display:block; }
   .web-item-art.art-fallback{
@@ -935,9 +945,9 @@
     color:var(--ink-dim);
     font-size:19px;
   }
-  .web-item-info{ flex:1; min-width:0; display:flex; flex-direction:column; gap:3px; padding-top:2px; }
+  .web-item-info{ min-width:0; display:flex; flex-direction:column; gap:2px; }
   .web-item-name{
-    font-size:13px;
+    font-size:12.5px;
     min-width:0;
     max-width:100%;
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
@@ -950,14 +960,17 @@
     white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
   }
   .web-item-kebab{
-    background:none;
+    position:absolute;
+    top:6px; right:6px;
+    background:rgba(16,16,15,.55);
     border:none;
-    color:var(--ink-dim);
-    font-size:20px;
+    color:#f2efe6;
+    font-size:16px;
     line-height:1;
-    padding:8px 6px;
+    width:24px; height:24px;
+    border-radius:50%;
     cursor:pointer;
-    flex-shrink:0;
+    display:flex; align-items:center; justify-content:center;
     letter-spacing:1px;
   }
   .web-loading{
@@ -2785,12 +2798,12 @@
       <div class="web-item" data-ia="${escapeHtml(d.identifier)}" data-iaplay="${escapeHtml(d.identifier)}" data-candownload="${(!d._jamendo || d._jamendoDownloadAllowed) ? '1' : '0'}" style="cursor:pointer;">
         <div class="web-item-art ${d._thumb ? '' : 'art-fallback'}" data-fallback="${escapeHtml(d.identifier)}">
           ${d._thumb ? `<img src="${escapeHtml(d._thumb)}" alt="" loading="lazy" onerror="this.parentElement.classList.add('art-fallback'); this.remove();">` : ''}
+          <button class="web-item-kebab" data-iamenu="${escapeHtml(d.identifier)}" title="Mais opções">⋮</button>
         </div>
         <div class="web-item-info">
           <div class="web-item-name">${escapeHtml(d.title || d.identifier)}<span class="mini-bars" data-mbid="${escapeHtml(d.identifier)}"><span></span><span></span><span></span></span></div>
           <div class="web-item-artist">${escapeHtml(Array.isArray(d.creator) ? d.creator.join(', ') : (d.creator || (d._jamendo ? 'Jamendo' : 'Internet Archive')))}${d.runtime ? ' · ' + escapeHtml(String(d.runtime)) : ''}</div>
         </div>
-        <button class="web-item-kebab" data-iamenu="${escapeHtml(d.identifier)}" title="Mais opções">⋮</button>
       </div>
     `).join('');
     if(append){
