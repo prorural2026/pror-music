@@ -45,7 +45,6 @@
         Instalar
       </button>
       <button class="qr-btn" id="qrBtn" title="Ver QR code" style="display:none;">Q</button>
-      <button class="qr-btn" id="ytTestBtn" title="Teste YouTube (só dono)" style="display:none;">YT</button>
     </div>
     <button class="pl-switch-btn" id="plSwitchBtn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
@@ -281,21 +280,6 @@
       <div class="cine-info">
         <div class="cine-title">Aponte a câmera</div>
         <div class="cine-artist">prorural2026.github.io/pror-music</div>
-      </div>
-    </div>
-  </div>
-
-  <div class="cine-modal" id="ytTestModal">
-    <div class="cine-inner">
-      <button class="cine-close" id="ytTestClose" title="Fechar">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
-      </button>
-      <div class="cine-info" style="padding-top:10px; width:100%;">
-        <div class="cine-title" style="margin-bottom:4px;">Teste — Player do YouTube</div>
-        <p style="font-size:11px; color:var(--ink-dim); margin:0 0 14px;">Só pra verificação técnica. Cola o ID ou link de um vídeo.</p>
-        <input type="text" id="ytTestInput" placeholder="ID do vídeo (ex: dQw4w9WgXcQ)" style="width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid var(--line); background:var(--bg-raised); color:var(--ink); font-size:13px; margin-bottom:10px;">
-        <button id="ytTestLoadBtn" style="width:100%; padding:10px; border-radius:8px; border:none; background:var(--accent); color:#10100f; font-weight:700; cursor:pointer; margin-bottom:14px;">Carregar</button>
-        <div id="ytTestPlayerWrap" style="width:100%; aspect-ratio:16/9; background:#000; border-radius:8px; overflow:hidden;"></div>
       </div>
     </div>
   </div>
@@ -2624,42 +2608,8 @@
     }
     if(localStorage.getItem('pm_owner') === '1' && qrBtn){
       qrBtn.style.display = 'flex';
-      const ytTestBtn = document.getElementById('ytTestBtn');
-      if(ytTestBtn) ytTestBtn.style.display = 'flex';
     }
   }catch(e){ /* localStorage indisponível, mantém escondido */ }
-
-  // ---------- Teste técnico do player do YouTube (só dono, experimental) ----------
-  const ytTestModal = document.getElementById('ytTestModal');
-  const ytTestBtnEl = document.getElementById('ytTestBtn');
-  const ytTestClose = document.getElementById('ytTestClose');
-  const ytTestInput = document.getElementById('ytTestInput');
-  const ytTestLoadBtn = document.getElementById('ytTestLoadBtn');
-  const ytTestPlayerWrap = document.getElementById('ytTestPlayerWrap');
-
-  function extractYouTubeId(raw){
-    raw = raw.trim();
-    if(/^[\w-]{11}$/.test(raw)) return raw;
-    const m = raw.match(/(?:youtube\.com\/(?:watch\?v=|shorts\/)|youtu\.be\/)([\w-]{11})/);
-    return m ? m[1] : null;
-  }
-
-  if(ytTestBtnEl && ytTestModal){
-    ytTestBtnEl.addEventListener('click', () => ytTestModal.classList.add('open'));
-  }
-  if(ytTestClose && ytTestModal){
-    ytTestClose.addEventListener('click', () => {
-      ytTestModal.classList.remove('open');
-      ytTestPlayerWrap.innerHTML = '';
-    });
-  }
-  if(ytTestLoadBtn){
-    ytTestLoadBtn.addEventListener('click', () => {
-      const id = extractYouTubeId(ytTestInput.value || '');
-      if(!id){ alert('Não consegui reconhecer um ID de vídeo válido.'); return; }
-      ytTestPlayerWrap.innerHTML = '<iframe style="width:100%;height:100%;border:0;" src="https://www.youtube.com/embed/' + id + '?autoplay=1" allow="autoplay; encrypted-media" allowfullscreen></iframe>';
-    });
-  }
 
   if(qrBtn){
     qrBtn.addEventListener('click', () => { qrModal.classList.add('open'); });
