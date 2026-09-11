@@ -86,6 +86,9 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
         <span id="repeatOneBadge" style="display:none;">1</span>
       </button>
+      <button class="share-btn" id="upNextTrigger" title="A seguir" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
+      </button>
     </div>
 
     <div class="progress-row" id="progressRow">
@@ -94,10 +97,6 @@
       <span class="time right" id="durTime">0:00</span>
     </div>
 
-    <button class="upnext-trigger" id="upNextTrigger" style="display:none;">
-      A seguir
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-    </button>
   </header>
 
   <div class="sheet-backdrop" id="upNextBackdrop">
@@ -447,6 +446,7 @@
   header{
     padding:10px 20px 8px;
     flex-shrink:0;
+    position:relative;
   }
   .eyebrow{
     display:none;
@@ -462,6 +462,11 @@
     align-items:center;
     justify-content:space-between;
     margin-top:8px;
+  }
+  #playerOptionsBtn{
+    position:absolute;
+    top:10px;
+    right:20px;
   }
   .player-options-row{
     display:none;
@@ -1041,16 +1046,6 @@
   }
   .pl-item:active{ background:var(--bg); }
   .pl-item.active{ background:var(--bg); }
-  .upnext-trigger{
-    background:none; border:none;
-    color:var(--ink-dim);
-    font-size:11px;
-    display:flex; align-items:center; gap:2px;
-    margin:8px 0 0 auto;
-    padding:4px 0;
-    cursor:pointer;
-  }
-  .upnext-trigger svg{ width:14px; height:14px; }
   .upnext-item{
     display:flex; align-items:center; gap:10px;
     padding:10px; border-radius:10px; cursor:pointer;
