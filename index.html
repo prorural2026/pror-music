@@ -68,6 +68,12 @@
       <div class="bars" id="bars">
         <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
       </div>
+      <button class="share-btn" id="playerOptionsBtn" title="Mais opções">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
+      </button>
+    </div>
+
+    <div class="player-options-row" id="playerOptionsRow">
       <button class="share-btn" id="shareBtn" title="Compartilhar" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>
       </button>
@@ -459,11 +465,7 @@
     flex-shrink:0;
   }
   .eyebrow{
-    font-size:9px;
-    letter-spacing:.14em;
-    text-transform:uppercase;
-    color:var(--ink-dim);
-    margin:0 0 4px;
+    display:none;
   }
   .now-title{
     font-family:Georgia,"Times New Roman",serif;
@@ -485,6 +487,13 @@
     justify-content:space-between;
     margin-top:8px;
   }
+  .player-options-row{
+    display:none;
+    gap:8px;
+    margin-top:10px;
+    justify-content:flex-end;
+  }
+  .player-options-row.open{ display:flex; }
   .quick-pause-btn{
     background:none;
     border:1px solid var(--line);
@@ -2268,6 +2277,14 @@
   // ---------- instalação com um toque ----------
   // ---------- temporizador pra dormir ----------
   const sleepSheetBackdrop = document.getElementById('sleepSheetBackdrop');
+  const playerOptionsBtn = document.getElementById('playerOptionsBtn');
+  const playerOptionsRow = document.getElementById('playerOptionsRow');
+  if(playerOptionsBtn && playerOptionsRow){
+    playerOptionsBtn.addEventListener('click', () => {
+      playerOptionsRow.classList.toggle('open');
+    });
+  }
+
   const repeatBtn = document.getElementById('repeatBtn');
   const repeatOneBadge = document.getElementById('repeatOneBadge');
 
