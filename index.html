@@ -57,7 +57,6 @@
       <p class="mini-player-title" id="miniTitle">Toque numa música da lista</p>
       <p class="mini-player-artist" id="miniArtist"></p>
     </div>
-    <span class="mini-player-time" id="miniTime" style="display:none;"></span>
     <button class="mini-player-btn" id="miniPlayBtn" title="Tocar/Pausar">
       <svg id="miniPlayIcon" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
     </button>
@@ -122,6 +121,7 @@
           <p class="home-nowplaying-label">Tocando agora</p>
           <p class="home-nowplaying-title" id="homeNowPlayingTitle"></p>
           <p class="home-nowplaying-artist" id="homeNowPlayingArtist"></p>
+          <span class="mini-player-time" id="miniTime" style="display:none;"></span>
         </div>
       </div>
 
@@ -434,6 +434,7 @@
     flex-shrink:0;
     font-variant-numeric:tabular-nums;
   }
+  .home-nowplaying-info .mini-player-time{ display:block; margin-top:4px; }
   .mini-player-btn{
     background:none;
     border:none;
