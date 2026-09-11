@@ -181,6 +181,15 @@
   </div>
 
   <div class="web-panel" id="panelFree">
+    <div class="home-nowplaying-card" id="livreNowPlayingCard" style="display:none; margin:14px 16px 14px;">
+      <div class="home-nowplaying-art" id="livreNowPlayingArt"></div>
+      <div class="home-nowplaying-info">
+        <p class="home-nowplaying-label">Tocando agora</p>
+        <p class="home-nowplaying-title" id="livreNowPlayingTitle"></p>
+        <p class="home-nowplaying-artist" id="livreNowPlayingArtist"></p>
+        <span class="mini-player-time" id="miniTimeLivre" style="display:none;"></span>
+      </div>
+    </div>
     <div class="web-search-box">
       <input type="text" id="freeSearchInput" placeholder="Nome da música, artista ou gênero" autocomplete="off">
       <button class="mic-btn" id="micFreeSearchInput" title="Buscar por voz" type="button">
@@ -1323,14 +1332,16 @@
     return m + ':' + sec;
   }
   function updateMiniTime(current, duration){
-    const el = document.getElementById('miniTime');
-    if(!el) return;
-    if(!isFinite(duration) || duration <= 0){
-      el.style.display = 'none';
-      return;
-    }
-    el.style.display = '';
-    el.textContent = fmtTime(current) + ' / ' + fmtTime(duration);
+    ['miniTime', 'miniTimeLivre'].forEach(id => {
+      const el = document.getElementById(id);
+      if(!el) return;
+      if(!isFinite(duration) || duration <= 0){
+        el.style.display = 'none';
+        return;
+      }
+      el.style.display = '';
+      el.textContent = fmtTime(current) + ' / ' + fmtTime(duration);
+    });
   }
   function escapeHtml(s){
     const d = document.createElement('div');
@@ -1545,6 +1556,22 @@
         }
       } else {
         homeCard.style.display = 'none';
+      }
+    }
+    const livreCard = document.getElementById('livreNowPlayingCard');
+    if(livreCard){
+      if(isPlaying){
+        livreCard.style.display = 'flex';
+        document.getElementById('livreNowPlayingTitle').textContent = name;
+        document.getElementById('livreNowPlayingArtist').textContent = artist || '';
+        const artEl2 = document.getElementById('livreNowPlayingArt');
+        if(thumb){
+          artEl2.innerHTML = `<img src="${thumb}" alt="" onerror="this.remove();">`;
+        } else {
+          artEl2.innerHTML = '<svg viewBox="0 0 24 24" fill="#0d2418"><path d="M8 5v14l11-7z"></path></svg>';
+        }
+      } else {
+        livreCard.style.display = 'none';
       }
     }
   }
@@ -1946,16 +1973,19 @@
   function updatePlayUI(){
     const progressRow = document.getElementById('progressRow');
     const homeCard = document.getElementById('homeNowPlayingCard');
+    const livreCard = document.getElementById('livreNowPlayingCard');
     if(state.isPlaying){
       bars.classList.add('playing');
       statusLabel.textContent = 'Tocando agora';
       if(progressRow) progressRow.classList.add('visible');
       if(homeCard && !previewAudio) homeCard.style.display = 'flex';
+      if(livreCard && !previewAudio) livreCard.style.display = 'flex';
     } else {
       bars.classList.remove('playing');
       if(state.currentIndex !== -1) statusLabel.textContent = 'Pausado';
       if(progressRow) progressRow.classList.remove('visible');
       if(homeCard && !previewAudio) homeCard.style.display = 'none';
+      if(livreCard && !previewAudio) livreCard.style.display = 'none';
     }
     if(!previewAudio) updateQuickPauseIcon(state.isPlaying);
     if(state.isPlaying && !previewAudio){
@@ -2578,6 +2608,13 @@
   const homeNowPlayingCard = document.getElementById('homeNowPlayingCard');
   if(homeNowPlayingCard){
     homeNowPlayingCard.addEventListener('click', () => {
+      playerHeader.classList.add('expanded');
+      miniPlayer.classList.add('hidden');
+    });
+  }
+  const livreNowPlayingCard = document.getElementById('livreNowPlayingCard');
+  if(livreNowPlayingCard){
+    livreNowPlayingCard.addEventListener('click', () => {
       playerHeader.classList.add('expanded');
       miniPlayer.classList.add('hidden');
     });
