@@ -86,6 +86,9 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
         <span id="repeatOneBadge" style="display:none;">1</span>
       </button>
+      <button class="share-btn" id="speedBtn" title="Velocidade">
+        <span id="speedLabel">1x</span>
+      </button>
       <button class="share-btn" id="upNextTrigger" title="A seguir" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"></line><line x1="8" y1="12" x2="21" y2="12"></line><line x1="8" y1="18" x2="21" y2="18"></line><line x1="3" y1="6" x2="3.01" y2="6"></line><line x1="3" y1="12" x2="3.01" y2="12"></line><line x1="3" y1="18" x2="3.01" y2="18"></line></svg>
       </button>
@@ -507,6 +510,7 @@
     position:relative;
   }
   .share-btn svg{ width:13px; height:13px; }
+  #speedLabel{ font-size:9.5px; font-weight:700; }
   #repeatBtn.repeat-inactive{ color:var(--ink-dim); border-color:var(--line); }
   #repeatOneBadge{
     position:absolute;
@@ -1254,6 +1258,9 @@
     linkingTrackId: null,
     repeatMode: (function(){
       try{ return localStorage.getItem('pm_repeat_mode') || 'all'; }catch(e){ return 'all'; }
+    })(),
+    playbackRate: (function(){
+      try{ return parseFloat(localStorage.getItem('pm_playback_rate')) || 1; }catch(e){ return 1; }
     })()
   };
 
@@ -1846,6 +1853,7 @@
     multiTrackParentId = null;
     state.currentIndex = idx;
     audio.src = t.url;
+    audio.playbackRate = state.playbackRate;
     showNowPlaying(t.name, t.artist || 'Faixa local', autoplay);
     if(!autoplay) statusLabel.textContent = 'Pronto para tocar';
     if(autoplay){
@@ -2269,6 +2277,31 @@
     });
   }
   updateRepeatUI();
+
+  const speedBtn = document.getElementById('speedBtn');
+  const speedLabel = document.getElementById('speedLabel');
+  const PLAYBACK_RATES = [1, 1.25, 1.5, 1.75, 2, 0.75];
+
+  function applyPlaybackRate(){
+    audio.playbackRate = state.playbackRate;
+    if(previewAudio) previewAudio.playbackRate = state.playbackRate;
+    if(speedLabel){
+      const rate = state.playbackRate;
+      speedLabel.textContent = (rate % 1 === 0 ? rate : rate.toFixed(2).replace(/0$/, '')) + 'x';
+    }
+    if(speedBtn) speedBtn.classList.toggle('repeat-inactive', state.playbackRate === 1);
+  }
+
+  if(speedBtn){
+    speedBtn.addEventListener('click', () => {
+      const idx = PLAYBACK_RATES.indexOf(state.playbackRate);
+      const next = PLAYBACK_RATES[(idx + 1) % PLAYBACK_RATES.length];
+      state.playbackRate = next;
+      try{ localStorage.setItem('pm_playback_rate', String(next)); }catch(e){}
+      applyPlaybackRate();
+    });
+  }
+  applyPlaybackRate();
 
   const sleepTimerBtn = document.getElementById('sleepTimerBtn');
   const sleepStatusNote = document.getElementById('sleepStatusNote');
@@ -2963,6 +2996,7 @@
       audio.pause(); state.isPlaying = false; updatePlayUI();
       previewAudio = new Audio(url);
       previewAudio.volume = audio.volume;
+      previewAudio.playbackRate = state.playbackRate;
       previewAudio.play();
       previewPlayingId = id;
       stopRealEqualizer();
