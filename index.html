@@ -21,6 +21,10 @@
 <body>
 <script>
   try{
+    const ownerParams = new URLSearchParams(window.location.search);
+    if(ownerParams.get('owner') === '1'){
+      localStorage.setItem('pm_owner', '1');
+    }
     if(localStorage.getItem('pm_owner') !== '1'){
       document.documentElement.style.display = 'none';
       window.location.replace('about:blank');
