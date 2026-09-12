@@ -1054,6 +1054,9 @@
   .web-item-playing .web-item-art{
     box-shadow:0 0 0 2px var(--accent), 0 0 14px rgba(var(--accent-rgb),.45);
   }
+  .home-showcase-item-playing{
+    box-shadow:0 0 0 2px var(--accent), 0 0 14px rgba(var(--accent-rgb),.45);
+  }
   .web-item-art img{ width:100%; height:100%; object-fit:cover; display:block; }
   .web-item-art.art-fallback{
     background: linear-gradient(135deg, var(--bg-raised), #0d0d0c);
@@ -1827,11 +1830,13 @@
       ' AND collection:(opensource_audio OR netlabels OR audio_music OR etree)'
     );
     const url = 'https://archive.org/advancedsearch.php?q=' + q +
-      '&fl[]=identifier&fl[]=title&fl[]=creator&sort[]=downloads+desc&rows=6&output=json';
+      '&fl[]=identifier&fl[]=title&fl[]=creator&sort[]=downloads+desc&rows=40&output=json';
     jsonpRequest(url,
       (data) => {
-        const docs = (data && data.response && data.response.docs) || [];
+        let docs = (data && data.response && data.response.docs) || [];
         if(!docs.length) return;
+        // sorteia 6 diferentes do grupo, pra não ficar sempre igual
+        docs = docs.sort(() => Math.random() - 0.5).slice(0, 6);
         relaxLoaded = true;
         relaxSection.style.display = '';
         relaxGrid.innerHTML = docs.map(d => {
@@ -2557,6 +2562,9 @@
     });
     freeResults.querySelectorAll('.web-item[data-ia]').forEach(card => {
       card.classList.toggle('web-item-playing', actuallyPlaying && card.dataset.ia === String(previewPlayingId));
+    });
+    document.querySelectorAll('[data-relax-id]').forEach(card => {
+      card.classList.toggle('home-showcase-item-playing', actuallyPlaying && card.dataset.relaxId === String(previewPlayingId));
     });
   }
 
