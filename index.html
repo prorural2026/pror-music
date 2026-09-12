@@ -196,12 +196,14 @@
       </div>
     </div>
 
-    <div class="list-header">
-      <h2>Playlist</h2>
-      <span id="countLabel">0 faixas</span>
+    <div class="list-header" style="justify-content:flex-start; gap:16px;">
+      <button id="playlistTabBtn" class="pl-switch-btn active-sub" style="background:none;border:none;color:var(--accent);font-family:Georgia,serif;font-size:16px;font-weight:700;padding:0;">Playlist</button>
+      <button id="downloadsTabBtn" class="pl-switch-btn" style="background:none;border:none;color:var(--ink-dim);font-family:Georgia,serif;font-size:16px;padding:0;">Baixadas</button>
+      <span id="countLabel" style="margin-left:auto;">0 faixas</span>
     </div>
 
     <div id="playlist"></div>
+    <div id="downloadsList" style="display:none; padding:0 4px;"></div>
   </div>
 
   <div class="web-panel" id="panelFree">
@@ -1382,6 +1384,48 @@
       el.textContent = fmtTime(current) + ' / ' + fmtTime(duration);
     });
   }
+
+  // ---------- Baixadas: guarda o áudio de verdade no aparelho (IndexedDB), toca sem internet ----------
+  let downloadsDB = null;
+  function openDownloadsDB(){
+    return new Promise((resolve, reject) => {
+      if(downloadsDB){ resolve(downloadsDB); return; }
+      const req = indexedDB.open('prormusic_downloads', 1);
+      req.onupgradeneeded = () => {
+        req.result.createObjectStore('tracks', { keyPath: 'id' });
+      };
+      req.onsuccess = () => { downloadsDB = req.result; resolve(downloadsDB); };
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function saveDownloadedTrack(id, title, artist, thumb, blob){
+    const db = await openDownloadsDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('tracks', 'readwrite');
+      tx.objectStore('tracks').put({ id, title, artist, thumb, blob, savedAt: Date.now() });
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+  async function getAllDownloadedTracks(){
+    const db = await openDownloadsDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('tracks', 'readonly');
+      const req = tx.objectStore('tracks').getAll();
+      req.onsuccess = () => resolve(req.result.sort((a,b) => b.savedAt - a.savedAt));
+      req.onerror = () => reject(req.error);
+    });
+  }
+  async function deleteDownloadedTrack(id){
+    const db = await openDownloadsDB();
+    return new Promise((resolve, reject) => {
+      const tx = db.transaction('tracks', 'readwrite');
+      tx.objectStore('tracks').delete(id);
+      tx.oncomplete = () => resolve();
+      tx.onerror = () => reject(tx.error);
+    });
+  }
+
   function escapeHtml(s){
     const d = document.createElement('div');
     d.textContent = s;
@@ -2308,6 +2352,80 @@
   tabPlaylist.addEventListener('click', () => showView('playlist', true));
   tabFree.addEventListener('click', () => showView('free', true));
   panelHome.classList.add('active');
+
+  // ---------- Alternância Playlist / Baixadas ----------
+  const playlistTabBtn = document.getElementById('playlistTabBtn');
+  const downloadsTabBtn = document.getElementById('downloadsTabBtn');
+  const playlistListEl = document.getElementById('playlist');
+  const downloadsListEl = document.getElementById('downloadsList');
+
+  function fmtSavedDate(ts){
+    const d = new Date(ts);
+    return d.toLocaleDateString('pt-BR');
+  }
+
+  async function renderDownloadsList(){
+    let tracks = [];
+    try{ tracks = await getAllDownloadedTracks(); }catch(e){}
+    if(!tracks.length){
+      downloadsListEl.innerHTML = '<div class="empty-state">Nenhuma música baixada ainda. Toca no "⋮" de uma música na Música livre e escolhe "Baixar pro celular".</div>';
+      return;
+    }
+    downloadsListEl.innerHTML = tracks.map(t => `
+      <div class="web-item" data-download-id="${escapeHtml(t.id)}" style="cursor:pointer; flex-direction:row; align-items:center; gap:10px; margin-bottom:10px;">
+        <div class="web-item-art ${t.thumb ? '' : 'art-fallback'}" style="width:50px; height:50px; flex-shrink:0;">
+          ${t.thumb ? `<img src="${escapeHtml(t.thumb)}" alt="">` : ''}
+        </div>
+        <div class="web-item-info" style="flex:1;">
+          <div class="web-item-name">${escapeHtml(t.title)}</div>
+          <div class="web-item-artist">${escapeHtml(t.artist)} · baixada em ${fmtSavedDate(t.savedAt)}</div>
+        </div>
+        <button class="web-item-kebab" data-delete-download="${escapeHtml(t.id)}" style="position:static; background:none; color:var(--ink-dim);" title="Remover">✕</button>
+      </div>
+    `).join('');
+  }
+
+  function switchPlaylistSubTab(which){
+    const isDownloads = which === 'downloads';
+    playlistTabBtn.style.color = isDownloads ? 'var(--ink-dim)' : 'var(--accent)';
+    downloadsTabBtn.style.color = isDownloads ? 'var(--accent)' : 'var(--ink-dim)';
+    playlistListEl.style.display = isDownloads ? 'none' : '';
+    downloadsListEl.style.display = isDownloads ? '' : 'none';
+    countLabel.style.display = isDownloads ? 'none' : '';
+    if(isDownloads) renderDownloadsList();
+  }
+  if(playlistTabBtn) playlistTabBtn.addEventListener('click', () => switchPlaylistSubTab('playlist'));
+  if(downloadsTabBtn) downloadsTabBtn.addEventListener('click', () => switchPlaylistSubTab('downloads'));
+
+  if(downloadsListEl){
+    downloadsListEl.addEventListener('click', async (e) => {
+      const delBtn = e.target.closest('[data-delete-download]');
+      if(delBtn){
+        await deleteDownloadedTrack(delBtn.dataset.deleteDownload);
+        renderDownloadsList();
+        return;
+      }
+      const item = e.target.closest('[data-download-id]');
+      if(!item) return;
+      const db = await openDownloadsDB();
+      const tx = db.transaction('tracks', 'readonly');
+      const req = tx.objectStore('tracks').get(item.dataset.downloadId);
+      req.onsuccess = () => {
+        const t = req.result;
+        if(!t) return;
+        const objectUrl = URL.createObjectURL(t.blob);
+        stopPreview();
+        audio.pause(); state.isPlaying = false; updatePlayUI();
+        previewAudio = new Audio(objectUrl);
+        previewAudio.volume = audio.volume;
+        previewAudio.playbackRate = state.playbackRate;
+        previewAudio.play();
+        previewPlayingId = t.id;
+        showNowPlaying(t.title, t.artist, true, t.thumb);
+        syncMiniBars();
+      };
+    });
+  }
 
   const legalBackBtn = document.getElementById('legalBackBtn');
   if(legalBackBtn){
@@ -3387,16 +3505,13 @@
       if(!d) return;
       fetchPlayableUrl(id, (url) => {
         if(!url) return;
-        const ext = (url.split('.').pop() || 'mp3').split('?')[0];
-        const safeName = (d.title || d.identifier).replace(/[\\/:*?"<>|]/g, '').slice(0, 80);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = safeName + '.' + ext;
-        a.target = '_blank';
-        a.rel = 'noopener';
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+        fetch(url).then(r => r.blob()).then(blob => {
+          return saveDownloadedTrack(id, d.title || d.identifier, (Array.isArray(d.creator) ? d.creator.join(', ') : d.creator) || '', d._thumb || '', blob);
+        }).then(() => {
+          alert('Música baixada! Já está disponível em Playlist → Baixadas, mesmo sem internet.');
+        }).catch(() => {
+          alert('Não consegui baixar essa música agora. Tenta de novo.');
+        });
       });
     }
   });
