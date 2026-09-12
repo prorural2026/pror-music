@@ -144,7 +144,7 @@
 
       <div class="home-section" id="homeRelaxSection" style="display:none;">
         <p class="home-section-title" style="font-size:15px; font-family:Georgia,serif; text-transform:none; letter-spacing:0; color:var(--ink);">Relax</p>
-        <div class="home-showcase-grid" id="homeRelaxGrid"></div>
+        <div class="home-relax-grid" id="homeRelaxGrid"></div>
       </div>
 
 
@@ -838,6 +838,23 @@
     display:grid;
     grid-template-columns:repeat(3, 1fr);
     gap:8px;
+  }
+  .home-relax-grid{
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:12px 8px;
+  }
+  .home-relax-item{
+    background:none;
+    border:none;
+    padding:0;
+    cursor:pointer;
+    text-align:center;
+  }
+  .home-relax-item .home-showcase-item{ margin-bottom:6px; }
+  .home-relax-label{
+    font-size:10.5px;
+    color:var(--ink-dim);
   }
   .home-showcase-item{
     aspect-ratio:1;
@@ -1820,40 +1837,41 @@
 
   let relaxLoaded = false;
 
+  // Cadastro manual das músicas de Relax — Josemar vai preenchendo aos poucos.
+  // Cada item: identifier (do Internet Archive ou Jamendo), title, artist, thumb, label (etiqueta mostrada embaixo)
+  const RELAX_DATA = [
+    // Exemplo de como cadastrar (remover o // pra ativar, depois de confirmar a música certa):
+    // { identifier: 'algum_identificador', title: 'Nome da faixa', artist: 'Artista', thumb: '', label: 'Pra orar' },
+  ];
+
+  function isRelaxTrack(id){
+    return RELAX_DATA.some(r => r.identifier === id);
+  }
+
   function loadRelaxSection(){
     if(relaxLoaded) return;
+    relaxLoaded = true;
     const relaxSection = document.getElementById('homeRelaxSection');
     const relaxGrid = document.getElementById('homeRelaxGrid');
-    const q = encodeURIComponent(
-      '(relax OR relaxing OR meditation OR calm OR ambient OR sleep)' +
-      ' AND mediatype:(audio)' +
-      ' AND collection:(opensource_audio OR netlabels OR audio_music OR etree)'
-    );
-    const url = 'https://archive.org/advancedsearch.php?q=' + q +
-      '&fl[]=identifier&fl[]=title&fl[]=creator&sort[]=downloads+desc&rows=40&output=json';
-    jsonpRequest(url,
-      (data) => {
-        let docs = (data && data.response && data.response.docs) || [];
-        if(!docs.length) return;
-        // sorteia 6 diferentes do grupo, pra não ficar sempre igual
-        docs = docs.sort(() => Math.random() - 0.5).slice(0, 6);
-        relaxLoaded = true;
-        relaxSection.style.display = '';
-        relaxGrid.innerHTML = docs.map(d => {
-          const thumb = 'https://archive.org/services/img/' + d.identifier;
-          window._iaResultsData = window._iaResultsData || {};
-          window._iaResultsData[d.identifier] = {
-            identifier: d.identifier, title: d.title,
-            creator: d.creator, _thumb: thumb
-          };
-          return `
-          <button class="home-showcase-item" data-relax-id="${escapeHtml(d.identifier)}">
-            <img src="${escapeHtml(thumb)}" alt="" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=&quot;showcase-fallback&quot;>♪</span>';">
-          </button>`;
-        }).join('');
-      },
-      () => {}
-    );
+    if(!RELAX_DATA.length){
+      relaxSection.style.display = 'none';
+      return;
+    }
+    relaxSection.style.display = '';
+    relaxGrid.innerHTML = RELAX_DATA.map(r => {
+      window._iaResultsData = window._iaResultsData || {};
+      window._iaResultsData[r.identifier] = {
+        identifier: r.identifier, title: r.title,
+        creator: r.artist, _thumb: r.thumb || ''
+      };
+      return `
+      <button class="home-relax-item" data-relax-id="${escapeHtml(r.identifier)}">
+        <div class="home-showcase-item">
+          ${r.thumb ? `<img src="${escapeHtml(r.thumb)}" alt="" loading="lazy" onerror="this.style.display='none'; this.parentElement.innerHTML='<span class=&quot;showcase-fallback&quot;>♪</span>';">` : '<span class="showcase-fallback">♪</span>'}
+        </div>
+        <p class="home-relax-label">${escapeHtml(r.label)}</p>
+      </button>`;
+    }).join('');
   }
 
   document.getElementById('homeRelaxGrid').addEventListener('click', (e) => {
@@ -3570,7 +3588,9 @@
       showNowPlaying(displayTitle, dArtist, true, dMeta && dMeta._thumb);
       if(dMeta){
         recordPlayCount(id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb || '', !!dMeta._jamendo, dMeta._jamendo ? dMeta._jamendoAudioUrl : '', !!dMeta._jamendoDownloadAllowed || !dMeta._jamendo);
-        recordShowcase('ml:' + id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb || '', 'musicalivre', { identifier: id, isJamendoStyle: !!dMeta._jamendo, directUrl: dMeta._jamendo ? dMeta._jamendoAudioUrl : '' });
+        if(!isRelaxTrack(id)){
+          recordShowcase('ml:' + id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb || '', 'musicalivre', { identifier: id, isJamendoStyle: !!dMeta._jamendo, directUrl: dMeta._jamendo ? dMeta._jamendoAudioUrl : '' });
+        }
       }
       if(typeof updateCastButtonVisibility === 'function') updateCastButtonVisibility();
     if(typeof updateUpNextVisibility === 'function') updateUpNextVisibility();
