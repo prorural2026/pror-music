@@ -261,6 +261,25 @@
     </div>
   </div>
 
+  <div class="web-panel" id="panelLegal">
+    <div class="home-scroll">
+      <button class="collapse-handle" id="legalBackBtn" style="width:auto; justify-content:flex-start; padding:16px 16px 6px;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
+        <span style="font-size:13px; margin-left:6px;">Voltar</span>
+      </button>
+      <div style="padding:10px 20px 30px;">
+        <h2 style="font-family:Georgia,serif; color:var(--accent); font-size:20px;">Direitos Autorais</h2>
+        <h3 style="color:var(--accent); font-size:14px; margin-top:22px;">Sobre o conteúdo do PROR-MUSIC</h3>
+        <p style="color:var(--ink-dim); font-size:13px; line-height:1.6;">O PROR-MUSIC é um aplicativo pessoal, gratuito e sem fins lucrativos. A seção "Música livre" utiliza exclusivamente faixas com licença Creative Commons ou de domínio público, obtidas de fontes públicas como Internet Archive, Jamendo e Openverse.</p>
+        <h3 style="color:var(--accent); font-size:14px; margin-top:22px;">Uso permitido</h3>
+        <p style="color:var(--ink-dim); font-size:13px; line-height:1.6;">Todo o conteúdo exibido possui licença que autoriza expressamente sua execução e redistribuição gratuita pelo próprio autor. Sempre que disponível, o nome do artista é exibido junto à faixa.</p>
+        <h3 style="color:var(--accent); font-size:14px; margin-top:22px;">Solicitação de remoção</h3>
+        <p style="color:var(--ink-dim); font-size:13px; line-height:1.6;">Se você é autor de uma obra e acredita que ela foi incluída indevidamente, ou deseja que sua música seja removida do aplicativo por qualquer motivo, entre em contato:</p>
+        <p style="font-size:13px;"><a href="mailto:josemar697@gmail.com" style="color:var(--accent);">josemar697@gmail.com</a></p>
+      </div>
+    </div>
+  </div>
+
   <div class="tabs">
     <button class="tab-btn active" id="tabHome">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 8h-3v9h-4v-6H10v6H6v-9H3z"></path></svg>
@@ -1748,7 +1767,7 @@
       _thumb: r.thumb || '', _jamendo: true, _jamendoAudioUrl: r.audioUrl,
       _jamendoDownloadAllowed: false
     };
-    activateTab(tabFree, panelFree);
+    showView('free', true);
     playIATrack(identifier);
   });
 
@@ -1831,7 +1850,7 @@
     try{ counts = JSON.parse(localStorage.getItem(PLAYCOUNT_KEY) || '{}'); }catch(err){}
     const item = counts[id];
     if(!item) return;
-    activateTab(tabFree, panelFree);
+    showView('free', true);
     if(!window._iaResultsData) window._iaResultsData = {};
     window._iaResultsData[id] = {
       identifier: id, title: item.title, creator: item.artist,
@@ -1852,10 +1871,10 @@
       const idx = pl.tracks.findIndex(t => t.id === item.refId.trackId);
       if(idx === -1) return;
       state.currentPlaylistId = item.refId.playlistId;
-      activateTab(tabPlaylist, panelPlaylist);
+      showView('playlist', true);
       loadTrack(idx, true);
     } else {
-      activateTab(tabFree, panelFree);
+      showView('free', true);
       if(!window._iaResultsData) window._iaResultsData = {};
       window._iaResultsData[item.refId.identifier] = {
         identifier: item.refId.identifier, title: item.name, creator: item.artist,
@@ -1875,14 +1894,14 @@
     const idx = pl.tracks.findIndex(t => t.id === trackId);
     if(idx === -1) return;
     state.currentPlaylistId = playlistId;
-    activateTab(tabPlaylist, panelPlaylist);
+    showView('playlist', true);
     loadTrack(idx, true);
   });
 
   document.getElementById('homeGenreRow').addEventListener('click', (e) => {
     const chip = e.target.closest('[data-home-genre]');
     if(!chip) return;
-    activateTab(tabFree, panelFree);
+    showView('free', true);
     freeSearchInput.value = chip.dataset.homeGenre;
     markGenreExplored(chip.dataset.homeGenre);
     runFreeSearch();
@@ -2268,10 +2287,34 @@
   }
   const tabHome = document.getElementById('tabHome');
   const panelHome = document.getElementById('panelHome');
-  tabHome.addEventListener('click', () => { activateTab(tabHome, panelHome); renderHome(); });
-  tabPlaylist.addEventListener('click', () => activateTab(tabPlaylist, panelPlaylist));
-  tabFree.addEventListener('click', () => activateTab(tabFree, panelFree));
+  const panelLegal = document.getElementById('panelLegal');
+
+  function showView(view, pushHistory){
+    [panelHome, panelPlaylist, panelFree, panelLegal].forEach(p => p.classList.remove('active'));
+    if(view === 'home'){ activateTab(tabHome, panelHome); renderHome(); }
+    else if(view === 'playlist'){ activateTab(tabPlaylist, panelPlaylist); }
+    else if(view === 'free'){ activateTab(tabFree, panelFree); }
+    else if(view === 'legal'){ panelLegal.classList.add('active'); }
+    if(pushHistory){
+      try{ history.pushState({ view: view }, '', ''); }catch(e){}
+    }
+  }
+
+  tabHome.addEventListener('click', () => showView('home', true));
+  tabPlaylist.addEventListener('click', () => showView('playlist', true));
+  tabFree.addEventListener('click', () => showView('free', true));
   panelHome.classList.add('active');
+
+  const legalBackBtn = document.getElementById('legalBackBtn');
+  if(legalBackBtn){
+    legalBackBtn.addEventListener('click', () => { history.back(); });
+  }
+
+  try{ history.replaceState({ view: 'home' }, '', ''); }catch(e){}
+  window.addEventListener('popstate', (e) => {
+    const view = (e.state && e.state.view) || 'home';
+    showView(view, false);
+  });
 
   let previewAudio = null;
   let previewPlayingId = null;
@@ -2316,7 +2359,7 @@
 
   // ---------- Rodapé: menu "+" com páginas auxiliares ----------
   const FOOTER_PAGES = [
-    { name: 'Direitos Autorais', url: 'legal.html' }
+    { name: 'Direitos Autorais', view: 'legal' }
   ];
   const footerPagesBtn = document.getElementById('footerPagesBtn');
   const footerPagesBackdrop = document.getElementById('footerPagesBackdrop');
@@ -2327,8 +2370,17 @@
     const term = (filter || '').toLowerCase();
     const matches = FOOTER_PAGES.filter(p => p.name.toLowerCase().includes(term));
     footerPagesList.innerHTML = matches.map(p =>
-      `<a class="footer-page-item" href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${escapeHtml(p.name)}</a>`
+      `<button class="footer-page-item" data-view="${escapeHtml(p.view)}" style="width:100%; background:none; border:none; text-align:left;">${escapeHtml(p.name)}</button>`
     ).join('') || '<p style="color:var(--ink-dim);font-size:13px;padding:10px;">Nenhuma página encontrada.</p>';
+  }
+
+  if(footerPagesList){
+    footerPagesList.addEventListener('click', (e) => {
+      const item = e.target.closest('[data-view]');
+      if(!item) return;
+      footerPagesBackdrop.classList.remove('open');
+      showView(item.dataset.view, true);
+    });
   }
 
   if(footerPagesBtn){
