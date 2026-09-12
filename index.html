@@ -274,7 +274,9 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
       <span>Livre</span>
     </button>
-    <button class="nav-plus-btn" id="footerPagesBtn" title="Mais páginas">+</button>
+    <button class="nav-plus-btn" id="footerPagesBtn" title="Mais páginas">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    </button>
   </div>
 
   <audio id="audio" preload="metadata"></audio>
@@ -738,7 +740,8 @@
     flex-shrink:0;
     border-top:1px solid var(--line);
     background:var(--bg-raised);
-    padding-right:14px;
+    padding-right:20px;
+    box-sizing:border-box;
   }
   .tab-btn{
     flex:1;
@@ -820,19 +823,20 @@
   .home-showcase-item .showcase-fallback{ color:var(--ink-dim); font-size:16px; }
   .home-section{ margin-bottom:26px; }
   .nav-plus-btn{
+    box-sizing:border-box;
     flex-shrink:0;
-    width:30px; height:30px;
-    margin:0 0 0 4px;
+    width:26px; height:26px;
+    margin:0 0 0 2px;
     align-self:center;
     border-radius:50%;
     background:none;
     border:1.5px solid var(--line);
     color:var(--ink-dim);
-    font-size:17px;
-    font-weight:700;
     cursor:pointer;
+    padding:0;
     display:flex; align-items:center; justify-content:center;
   }
+  .nav-plus-btn svg{ width:20px; height:20px; flex-shrink:0; }
   .nav-plus-btn:active{
     border-color:var(--accent);
     color:var(--accent);
