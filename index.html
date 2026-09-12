@@ -152,6 +152,18 @@
         <div class="home-genre-row" id="homeGenreRow"></div>
       </div>
 
+      <div class="home-footer">
+        <button class="home-footer-plus" id="footerPagesBtn" title="Mais páginas">+</button>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="sheet-backdrop" id="footerPagesBackdrop">
+    <div class="sheet">
+      <h3>Páginas</h3>
+      <input type="text" id="footerPagesSearch" placeholder="Buscar página..." style="width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid var(--line); background:var(--bg-raised); color:var(--ink); font-size:13px; margin-bottom:12px;">
+      <div id="footerPagesList"></div>
     </div>
   </div>
 
@@ -809,6 +821,31 @@
   .home-showcase-item img{ width:100%; height:100%; object-fit:cover; display:block; }
   .home-showcase-item .showcase-fallback{ color:var(--ink-dim); font-size:16px; }
   .home-section{ margin-bottom:26px; }
+  .home-footer{
+    display:flex;
+    justify-content:center;
+    padding:10px 0 4px;
+  }
+  .home-footer-plus{
+    width:34px; height:34px;
+    border-radius:50%;
+    background:none;
+    border:1px solid var(--line);
+    color:var(--ink-dim);
+    font-size:18px;
+    cursor:pointer;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .footer-page-item{
+    display:flex; align-items:center;
+    padding:12px 10px;
+    border-radius:10px;
+    cursor:pointer;
+    color:var(--ink);
+    font-size:14px;
+    text-decoration:none;
+  }
+  .footer-page-item:active{ background:var(--bg); }
   .home-hero-section{ margin-bottom:0; }
   .home-nowplaying-card{
     display:flex;
@@ -2269,6 +2306,39 @@
   if(playerOptionsBtn && playerOptionsRow){
     playerOptionsBtn.addEventListener('click', () => {
       playerOptionsRow.classList.toggle('open');
+    });
+  }
+
+  // ---------- Rodapé: menu "+" com páginas auxiliares ----------
+  const FOOTER_PAGES = [
+    { name: 'Direitos Autorais', url: 'legal.html' }
+  ];
+  const footerPagesBtn = document.getElementById('footerPagesBtn');
+  const footerPagesBackdrop = document.getElementById('footerPagesBackdrop');
+  const footerPagesSearch = document.getElementById('footerPagesSearch');
+  const footerPagesList = document.getElementById('footerPagesList');
+
+  function renderFooterPages(filter){
+    const term = (filter || '').toLowerCase();
+    const matches = FOOTER_PAGES.filter(p => p.name.toLowerCase().includes(term));
+    footerPagesList.innerHTML = matches.map(p =>
+      `<a class="footer-page-item" href="${escapeHtml(p.url)}" target="_blank" rel="noopener">${escapeHtml(p.name)}</a>`
+    ).join('') || '<p style="color:var(--ink-dim);font-size:13px;padding:10px;">Nenhuma página encontrada.</p>';
+  }
+
+  if(footerPagesBtn){
+    footerPagesBtn.addEventListener('click', () => {
+      footerPagesSearch.value = '';
+      renderFooterPages('');
+      footerPagesBackdrop.classList.add('open');
+    });
+  }
+  if(footerPagesSearch){
+    footerPagesSearch.addEventListener('input', () => renderFooterPages(footerPagesSearch.value));
+  }
+  if(footerPagesBackdrop){
+    footerPagesBackdrop.addEventListener('click', (e) => {
+      if(e.target === footerPagesBackdrop) footerPagesBackdrop.classList.remove('open');
     });
   }
 
