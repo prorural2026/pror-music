@@ -228,10 +228,12 @@
       </button>
       <button id="freeSearchBtn">Buscar</button>
     </div>
-    <div style="padding:0 16px 4px;">
+    <div style="padding:0 16px 4px; display:flex; gap:8px;">
       <button id="clipsModeToggle" style="background:none; border:1px solid var(--line); color:var(--ink-dim); font-size:11px; padding:6px 12px; border-radius:20px; cursor:pointer;">Ver clipes (vídeo)</button>
+      <button id="playlistsModeToggle" style="background:none; border:1px solid var(--line); color:var(--ink-dim); font-size:11px; padding:6px 12px; border-radius:20px; cursor:pointer;">Playlists prontas</button>
     </div>
     <div id="clipsResults" style="display:none; padding:0 16px;"></div>
+    <div id="jamendoPlaylistsResults" style="display:none; padding:0 16px;"></div>
     <div class="cine-modal" id="clipPlayerModal">
       <div class="cine-inner">
         <button class="cine-close" id="clipPlayerClose" title="Fechar">
@@ -328,8 +330,23 @@
       <div class="sleep-options">
         <button class="sleep-option" data-menuaction="add">Adicionar à playlist</button>
         <button class="sleep-option" data-menuaction="download" id="trackMenuDownload">Baixar pro celular</button>
+        <button class="sleep-option" data-menuaction="similar" id="trackMenuSimilar" style="display:none;">Músicas parecidas</button>
         <button class="sleep-option sleep-cancel" data-menuaction="remove">Não curti, tirar da lista</button>
       </div>
+    </div>
+  </div>
+
+  <div class="sheet-backdrop" id="similarBackdrop">
+    <div class="sheet">
+      <h3>Músicas parecidas</h3>
+      <div id="similarList"></div>
+    </div>
+  </div>
+
+  <div class="sheet-backdrop" id="jamendoPlaylistTracksBackdrop">
+    <div class="sheet">
+      <h3 id="jamendoPlaylistTracksTitle">Playlist</h3>
+      <div id="jamendoPlaylistTracksList"></div>
     </div>
   </div>
 
@@ -3121,15 +3138,108 @@
   const clipPlayerClose = document.getElementById('clipPlayerClose');
   const clipPlayerWrap = document.getElementById('clipPlayerWrap');
   let clipsModeActive = false;
+  const playlistsModeToggle = document.getElementById('playlistsModeToggle');
+  const jamendoPlaylistsResults = document.getElementById('jamendoPlaylistsResults');
+  let playlistsModeActive = false;
+
+  function setFreeMode(mode){
+    clipsModeActive = mode === 'clips';
+    playlistsModeActive = mode === 'playlists';
+    clipsModeToggle.textContent = clipsModeActive ? 'Ver músicas (áudio)' : 'Ver clipes (vídeo)';
+    playlistsModeToggle.textContent = playlistsModeActive ? 'Ver músicas (áudio)' : 'Playlists prontas';
+    clipsResults.style.display = clipsModeActive ? '' : 'none';
+    jamendoPlaylistsResults.style.display = playlistsModeActive ? '' : 'none';
+    freeResults.style.display = (clipsModeActive || playlistsModeActive) ? 'none' : '';
+    genreChips.style.display = (clipsModeActive || playlistsModeActive) ? 'none' : '';
+  }
 
   if(clipsModeToggle){
     clipsModeToggle.addEventListener('click', () => {
-      clipsModeActive = !clipsModeActive;
-      clipsModeToggle.textContent = clipsModeActive ? 'Ver músicas (áudio)' : 'Ver clipes (vídeo)';
-      clipsResults.style.display = clipsModeActive ? '' : 'none';
-      freeResults.style.display = clipsModeActive ? 'none' : '';
-      genreChips.style.display = clipsModeActive ? 'none' : '';
+      setFreeMode(clipsModeActive ? 'audio' : 'clips');
       if(clipsModeActive && freeSearchInput.value.trim()) runClipsSearch();
+    });
+  }
+  if(playlistsModeToggle){
+    playlistsModeToggle.addEventListener('click', () => {
+      setFreeMode(playlistsModeActive ? 'audio' : 'playlists');
+      if(playlistsModeActive) runJamendoPlaylistsSearch();
+    });
+  }
+
+  function runJamendoPlaylistsSearch(){
+    const term = freeSearchInput.value.trim();
+    jamendoPlaylistsResults.innerHTML = '<div class="web-loading">Buscando playlists…</div>';
+    const url = 'https://api.jamendo.com/v3.0/playlists/?client_id=' + JAMENDO_CLIENT_ID +
+      '&format=json&limit=12' + (term ? '&namesearch=' + encodeURIComponent(term) : '&order=creationdate_desc');
+    jsonpRequest(url,
+      (data) => {
+        const results = (data && data.results) || [];
+        if(!results.length){
+          jamendoPlaylistsResults.innerHTML = '<div class="empty-state">Nenhuma playlist encontrada.</div>';
+          return;
+        }
+        jamendoPlaylistsResults.innerHTML = results.map(p => `
+          <div class="web-item" data-jamendo-playlist="${escapeHtml(p.id)}" data-playlist-name="${escapeHtml(p.name)}" style="cursor:pointer; flex-direction:row; align-items:center; gap:10px; margin-bottom:10px;">
+            <div class="web-item-art ${p.zip ? '' : 'art-fallback'}" style="width:50px; height:50px; flex-shrink:0;"></div>
+            <div class="web-item-info" style="flex:1;">
+              <div class="web-item-name">${escapeHtml(p.name)}</div>
+              <div class="web-item-artist">Playlist Jamendo</div>
+            </div>
+          </div>
+        `).join('');
+      },
+      () => { jamendoPlaylistsResults.innerHTML = '<div class="empty-state">Não consegui buscar agora. Tenta de novo.</div>'; }
+    );
+  }
+
+  if(jamendoPlaylistsResults){
+    jamendoPlaylistsResults.addEventListener('click', (e) => {
+      const item = e.target.closest('[data-jamendo-playlist]');
+      if(!item) return;
+      const playlistId = item.dataset.jamendoPlaylist;
+      document.getElementById('jamendoPlaylistTracksTitle').textContent = item.dataset.playlistName;
+      const listEl = document.getElementById('jamendoPlaylistTracksList');
+      listEl.innerHTML = '<div class="web-loading">Carregando faixas…</div>';
+      document.getElementById('jamendoPlaylistTracksBackdrop').classList.add('open');
+      const url = 'https://api.jamendo.com/v3.0/playlists/tracks/?client_id=' + JAMENDO_CLIENT_ID +
+        '&format=json&playlist_id=' + encodeURIComponent(playlistId);
+      jsonpRequest(url,
+        (data) => {
+          const pl = (data && data.results && data.results[0]) || null;
+          const tracks = (pl && pl.tracks) || [];
+          if(!tracks.length){
+            listEl.innerHTML = '<div class="empty-state">Essa playlist não tem faixas disponíveis.</div>';
+            return;
+          }
+          listEl.innerHTML = tracks.map(t => {
+            const nId = normalizeJamendoTrack(t);
+            window._iaResultsData[nId.identifier] = nId;
+            return `
+            <div class="upnext-item" data-similar-id="${escapeHtml(nId.identifier)}">
+              <div class="upnext-item-art ${nId._thumb ? '' : 'art-fallback'}">
+                ${nId._thumb ? `<img src="${escapeHtml(nId._thumb)}" alt="">` : ''}
+              </div>
+              <div class="upnext-item-info">
+                <div class="upnext-item-name">${escapeHtml(nId.title)}</div>
+                <div class="upnext-item-artist">${escapeHtml(nId.creator)}</div>
+              </div>
+              ${nId.runtime ? `<span class="upnext-item-time">${escapeHtml(nId.runtime)}</span>` : ''}
+            </div>`;
+          }).join('');
+        },
+        () => { listEl.innerHTML = '<div class="empty-state">Não consegui carregar essa playlist.</div>'; }
+      );
+    });
+  }
+
+  const jamendoPlaylistTracksBackdrop = document.getElementById('jamendoPlaylistTracksBackdrop');
+  if(jamendoPlaylistTracksBackdrop){
+    jamendoPlaylistTracksBackdrop.addEventListener('click', (e) => {
+      if(e.target === jamendoPlaylistTracksBackdrop){ jamendoPlaylistTracksBackdrop.classList.remove('open'); return; }
+      const item = e.target.closest('[data-similar-id]');
+      if(!item) return;
+      jamendoPlaylistTracksBackdrop.classList.remove('open');
+      playIATrack(item.dataset.similarId);
     });
   }
 
@@ -3438,13 +3548,23 @@
     }
   }
 
-  freeSearchBtn.addEventListener('click', () => { clipsModeActive ? runClipsSearch() : runFreeSearch(); });
+  freeSearchBtn.addEventListener('click', () => {
+    if(clipsModeActive) runClipsSearch();
+    else if(playlistsModeActive) runJamendoPlaylistsSearch();
+    else runFreeSearch();
+  });
 
   freeResults.addEventListener('scroll', () => {
     const nearBottom = freeResults.scrollTop + freeResults.clientHeight >= freeResults.scrollHeight - 300;
     if(nearBottom) fetchNextFreeResultsBatch(true);
   });
-  freeSearchInput.addEventListener('keydown', (e) => { if(e.key === 'Enter'){ clipsModeActive ? runClipsSearch() : runFreeSearch(); } });
+  freeSearchInput.addEventListener('keydown', (e) => {
+    if(e.key === 'Enter'){
+      if(clipsModeActive) runClipsSearch();
+      else if(playlistsModeActive) runJamendoPlaylistsSearch();
+      else runFreeSearch();
+    }
+  });
   let genreScrollInterval = null;
   let genreScrollResumeTimer = null;
 
@@ -3492,6 +3612,9 @@
       const card = menuBtn.closest('.web-item');
       const downloadOpt = document.getElementById('trackMenuDownload');
       if(downloadOpt) downloadOpt.style.display = (card && card.dataset.candownload === '1') ? '' : 'none';
+      const similarOpt = document.getElementById('trackMenuSimilar');
+      const trackData = window._iaResultsData && window._iaResultsData[currentMenuTrackId];
+      if(similarOpt) similarOpt.style.display = (trackData && trackData._jamendo) ? '' : 'none';
       document.getElementById('trackMenuBackdrop').classList.add('open');
       return;
     }
@@ -3554,8 +3677,51 @@
           showToast('Não consegui baixar essa música agora. Tenta de novo.');
         });
       });
+    } else if(action === 'similar'){
+      const rawId = id.replace('jamendo:', '');
+      const similarList = document.getElementById('similarList');
+      similarList.innerHTML = '<div class="web-loading">Buscando músicas parecidas…</div>';
+      document.getElementById('similarBackdrop').classList.add('open');
+      const url = 'https://api.jamendo.com/v3.0/tracks/similar/?client_id=' + JAMENDO_CLIENT_ID +
+        '&format=json&id=' + encodeURIComponent(rawId) + '&limit=10';
+      jsonpRequest(url,
+        (data) => {
+          const results = (data && data.results) || [];
+          if(!results.length){
+            similarList.innerHTML = '<div class="empty-state">Não encontrei músicas parecidas com essa.</div>';
+            return;
+          }
+          similarList.innerHTML = results.map(t => {
+            const nId = normalizeJamendoTrack(t);
+            window._iaResultsData[nId.identifier] = nId;
+            return `
+            <div class="upnext-item" data-similar-id="${escapeHtml(nId.identifier)}">
+              <div class="upnext-item-art ${nId._thumb ? '' : 'art-fallback'}">
+                ${nId._thumb ? `<img src="${escapeHtml(nId._thumb)}" alt="">` : ''}
+              </div>
+              <div class="upnext-item-info">
+                <div class="upnext-item-name">${escapeHtml(nId.title)}</div>
+                <div class="upnext-item-artist">${escapeHtml(nId.creator)}</div>
+              </div>
+              ${nId.runtime ? `<span class="upnext-item-time">${escapeHtml(nId.runtime)}</span>` : ''}
+            </div>`;
+          }).join('');
+        },
+        () => { similarList.innerHTML = '<div class="empty-state">Não consegui buscar agora. Tenta de novo.</div>'; }
+      );
     }
   });
+
+  const similarBackdrop = document.getElementById('similarBackdrop');
+  if(similarBackdrop){
+    similarBackdrop.addEventListener('click', (e) => {
+      if(e.target === similarBackdrop){ similarBackdrop.classList.remove('open'); return; }
+      const item = e.target.closest('[data-similar-id]');
+      if(!item) return;
+      similarBackdrop.classList.remove('open');
+      playIATrack(item.dataset.similarId);
+    });
+  }
 })();
 </script>
 </body>
