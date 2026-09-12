@@ -738,6 +738,7 @@
     flex-shrink:0;
     border-top:1px solid var(--line);
     background:var(--bg-raised);
+    padding-right:14px;
   }
   .tab-btn{
     flex:1;
@@ -821,16 +822,20 @@
   .nav-plus-btn{
     flex-shrink:0;
     width:30px; height:30px;
-    margin:0 10px 0 0;
+    margin:0 0 0 4px;
     align-self:center;
     border-radius:50%;
     background:none;
-    border:1.5px solid var(--accent);
-    color:var(--accent);
+    border:1.5px solid var(--line);
+    color:var(--ink-dim);
     font-size:17px;
     font-weight:700;
     cursor:pointer;
     display:flex; align-items:center; justify-content:center;
+  }
+  .nav-plus-btn:active{
+    border-color:var(--accent);
+    color:var(--accent);
   }
   .footer-page-item{
     display:flex; align-items:center;
