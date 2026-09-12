@@ -1571,10 +1571,35 @@
       if(!AC) return false;
       audioCtx = new AC();
       const sourceNode = audioCtx.createMediaElementSource(audio);
+
+      // Realce automático e sutil (deixa a música mais "cheia" e agradável)
+      const bassBoost = audioCtx.createBiquadFilter();
+      bassBoost.type = 'lowshelf';
+      bassBoost.frequency.value = 150;
+      bassBoost.gain.value = 3;
+
+      const trebleBoost = audioCtx.createBiquadFilter();
+      trebleBoost.type = 'highshelf';
+      trebleBoost.frequency.value = 8000;
+      trebleBoost.gain.value = 2;
+
+      // Compressor: equilibra automaticamente partes muito altas e muito baixas
+      const compressor = audioCtx.createDynamicsCompressor();
+      compressor.threshold.value = -24;
+      compressor.knee.value = 30;
+      compressor.ratio.value = 3;
+      compressor.attack.value = 0.02;
+      compressor.release.value = 0.25;
+
       analyser = audioCtx.createAnalyser();
       analyser.fftSize = 64;
-      sourceNode.connect(analyser);
+
+      sourceNode.connect(bassBoost);
+      bassBoost.connect(trebleBoost);
+      trebleBoost.connect(compressor);
+      compressor.connect(analyser);
       analyser.connect(audioCtx.destination);
+
       freqData = new Uint8Array(analyser.frequencyBinCount);
       return true;
     }catch(e){
