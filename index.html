@@ -1202,6 +1202,13 @@
   .upnext-item-name{ font-size:13.5px; color:var(--ink); font-weight:600; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .upnext-item-artist{ font-size:11px; color:var(--ink-dim); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
   .upnext-item-time{ font-size:10.5px; color:var(--accent); flex-shrink:0; font-variant-numeric:tabular-nums; }
+  .upnext-reorder{ display:flex; flex-direction:column; gap:2px; flex-shrink:0; margin-left:4px; }
+  .upnext-reorder-btn{
+    background:none; border:1px solid var(--line); color:var(--ink-dim);
+    width:20px; height:16px; font-size:8px; border-radius:4px; cursor:pointer;
+    display:flex; align-items:center; justify-content:center; padding:0;
+  }
+  .upnext-reorder-btn:disabled{ opacity:.25; cursor:default; }
   .pl-item svg{ width:16px; height:16px; color:var(--accent); flex-shrink:0; }
   .pl-name{ flex:1; font-size:14px; }
   .pl-count{ font-size:11px; color:var(--ink-dim); }
@@ -2788,10 +2795,9 @@
     upNextTrigger.style.display = (hasMultiTrackNext || getUpcomingTracks().length) ? 'flex' : 'none';
   }
 
-  if(upNextTrigger){
-    upNextTrigger.addEventListener('click', () => {
-      const list = document.getElementById('upNextList');
-      if(multiTrackFiles && multiTrackFiles.length > 1){
+  function renderUpNextList(){
+    const list = document.getElementById('upNextList');
+    if(multiTrackFiles && multiTrackFiles.length > 1){
         list.innerHTML = multiTrackFiles.map((f, i) => {
           const name = f.title || (f.name || '').replace(/\.[^.]+$/, '') || ('Faixa ' + (i + 1));
           const dur = f.length ? fmtTime(Number(f.length)) : '';
@@ -2803,6 +2809,11 @@
               ${i === multiTrackIndex ? `<div class="upnext-item-artist">Tocando agora</div>` : ''}
             </div>
             ${dur ? `<span class="upnext-item-time">${escapeHtml(dur)}</span>` : ''}
+            ${i > multiTrackIndex ? `
+            <div class="upnext-reorder">
+              <button class="upnext-reorder-btn" data-reorder-file="${i}" data-dir="up" ${i === multiTrackIndex + 1 ? 'disabled' : ''}>▲</button>
+              <button class="upnext-reorder-btn" data-reorder-file="${i}" data-dir="down" ${i === multiTrackFiles.length - 1 ? 'disabled' : ''}>▼</button>
+            </div>` : ''}
           </div>`;
         }).join('');
       } else {
@@ -2818,15 +2829,48 @@
               <div class="upnext-item-artist">${escapeHtml(Array.isArray(d.creator) ? d.creator.join(', ') : (d.creator || ''))}</div>
             </div>
             ${d.runtime ? `<span class="upnext-item-time">${escapeHtml(String(d.runtime))}</span>` : ''}
+            <div class="upnext-reorder">
+              <button class="upnext-reorder-btn" data-reorder-queue="${escapeHtml(d.identifier)}" data-dir="up" ${i === 0 ? 'disabled' : ''}>▲</button>
+              <button class="upnext-reorder-btn" data-reorder-queue="${escapeHtml(d.identifier)}" data-dir="down" ${i === upcoming.length - 1 ? 'disabled' : ''}>▼</button>
+            </div>
           </div>
         `).join('');
-      }
+    }
+  }
+
+  if(upNextTrigger){
+    upNextTrigger.addEventListener('click', () => {
+      renderUpNextList();
       upNextBackdrop.classList.add('open');
     });
   }
   if(upNextBackdrop){
     upNextBackdrop.addEventListener('click', (e) => {
       if(e.target === upNextBackdrop){ upNextBackdrop.classList.remove('open'); return; }
+
+      const reorderBtn = e.target.closest('[data-reorder-file], [data-reorder-queue]');
+      if(reorderBtn){
+        const dir = reorderBtn.dataset.dir;
+        if(reorderBtn.dataset.reorderFile !== undefined){
+          const i = Number(reorderBtn.dataset.reorderFile);
+          const j = dir === 'up' ? i - 1 : i + 1;
+          if(j > multiTrackIndex && j < multiTrackFiles.length){
+            [multiTrackFiles[i], multiTrackFiles[j]] = [multiTrackFiles[j], multiTrackFiles[i]];
+          }
+        } else {
+          const id = reorderBtn.dataset.reorderQueue;
+          const list = window._iaResultsList || [];
+          const i = list.findIndex(d => d.identifier === id);
+          const j = dir === 'up' ? i - 1 : i + 1;
+          const currentIdx = list.findIndex(d => d.identifier === previewPlayingId);
+          if(i > -1 && j > currentIdx && j < list.length){
+            [list[i], list[j]] = [list[j], list[i]];
+          }
+        }
+        renderUpNextList();
+        return;
+      }
+
       const fileItem = e.target.closest('[data-upnext-fileindex]');
       if(fileItem){
         upNextBackdrop.classList.remove('open');
