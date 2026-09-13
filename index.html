@@ -200,7 +200,7 @@
     <div class="search-wrap">
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        <input type="text" id="searchInput" placeholder="Pesquisar música ou intérprete">
+        <input type="text" id="searchInput" placeholder="Pesquisar música ou intérprete" data-i18n-placeholder="placeholder_search">
         <button class="mic-btn" id="micSearchInput" title="Buscar por voz" type="button">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
         </button>
@@ -215,7 +215,7 @@
 
     <div class="list-header" style="justify-content:flex-start; gap:16px;">
       <button id="playlistTabBtn" class="pl-switch-btn active-sub" style="background:none;border:none;color:var(--accent);font-family:Georgia,serif;font-size:16px;font-weight:700;padding:0;">Playlist</button>
-      <button id="downloadsTabBtn" class="pl-switch-btn" style="background:none;border:none;color:var(--ink-dim);font-family:Georgia,serif;font-size:16px;padding:0;">Baixadas</button>
+      <button id="downloadsTabBtn" class="pl-switch-btn" style="background:none;border:none;color:var(--ink-dim);font-family:Georgia,serif;font-size:16px;padding:0;" data-i18n="tab_downloads">Baixadas</button>
       <span id="countLabel" style="margin-left:auto;">0 faixas</span>
     </div>
 
@@ -241,7 +241,7 @@
       <button class="mic-btn" id="micFreeSearchInput" title="Buscar por voz" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
       </button>
-      <button id="freeSearchBtn">Buscar</button>
+      <button id="freeSearchBtn" data-i18n="btn_search">Buscar</button>
     </div>
     <div style="padding:0 16px 4px; display:flex; gap:8px; flex-wrap:wrap;">
       <button id="clipsModeToggle" style="background:none; border:1px solid var(--line); color:var(--ink-dim); font-size:11px; padding:6px 12px; border-radius:20px; cursor:pointer;">Ver clipes (vídeo)</button>
@@ -306,15 +306,15 @@
   <div class="tabs">
     <button class="tab-btn active" id="tabHome">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3l9 8h-3v9h-4v-6H10v6H6v-9H3z"></path></svg>
-      <span>Início</span>
+      <span data-i18n="tab_home">Início</span>
     </button>
     <button class="tab-btn" id="tabPlaylist">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M9 18V5l12-2v13"></path><circle cx="6" cy="18" r="3"></circle><circle cx="18" cy="16" r="3"></circle></svg>
-      <span>Playlist</span>
+      <span data-i18n="tab_playlist">Playlist</span>
     </button>
     <button class="tab-btn" id="tabFree">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
-      <span>Livre</span>
+      <span data-i18n="tab_free">Livre</span>
     </button>
     <button class="nav-plus-btn" id="footerPagesBtn" title="Mais páginas">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
@@ -1510,6 +1510,42 @@
     clearTimeout(el._hideTimer);
     el._hideTimer = setTimeout(() => el.classList.remove('show'), 2800);
   }
+  // ---------- Sistema de idiomas: detecta o idioma do celular e traduz os textos marcados ----------
+  const TRANSLATIONS = {
+    en: {
+      tab_home: 'Home',
+      tab_playlist: 'Playlist',
+      tab_free: 'Free',
+      tab_downloads: 'Downloads',
+      btn_search: 'Search',
+      placeholder_search: 'Search song or artist',
+    }
+  };
+
+  function detectAppLanguage(){
+    try{
+      const saved = localStorage.getItem('pm_lang');
+      if(saved) return saved;
+      const nav = (navigator.language || 'pt').toLowerCase();
+      return nav.startsWith('pt') ? 'pt' : (TRANSLATIONS[nav.slice(0,2)] ? nav.slice(0,2) : 'pt');
+    }catch(e){ return 'pt'; }
+  }
+
+  function applyTranslations(){
+    const lang = detectAppLanguage();
+    if(lang === 'pt') return; // português é o padrão, já vem certo no HTML
+    const dict = TRANSLATIONS[lang];
+    if(!dict) return;
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+      const key = el.dataset.i18n;
+      if(dict[key]) el.textContent = dict[key];
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+      const key = el.dataset.i18nPlaceholder;
+      if(dict[key]) el.placeholder = dict[key];
+    });
+  }
+
   function escapeHtml(s){
     const d = document.createElement('div');
     d.textContent = s;
@@ -2531,6 +2567,7 @@
   tabPlaylist.addEventListener('click', () => showView('playlist', true));
   tabFree.addEventListener('click', () => showView('free', true));
   panelHome.classList.add('active');
+  applyTranslations();
 
   // ---------- Alternância Playlist / Baixadas ----------
   const playlistTabBtn = document.getElementById('playlistTabBtn');
