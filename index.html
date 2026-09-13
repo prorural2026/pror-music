@@ -1754,6 +1754,36 @@
   let freqData = null;
   let equalizerRafId = null;
 
+  let previewAudioCtx = null;
+  function applyAutoEnhancement(audioElement){
+    try{
+      if(!previewAudioCtx){
+        const AC = window.AudioContext || window.webkitAudioContext;
+        if(!AC) return;
+        previewAudioCtx = new AC();
+      }
+      const sourceNode = previewAudioCtx.createMediaElementSource(audioElement);
+      const bassBoost = previewAudioCtx.createBiquadFilter();
+      bassBoost.type = 'lowshelf';
+      bassBoost.frequency.value = 150;
+      bassBoost.gain.value = 3;
+      const trebleBoost = previewAudioCtx.createBiquadFilter();
+      trebleBoost.type = 'highshelf';
+      trebleBoost.frequency.value = 8000;
+      trebleBoost.gain.value = 2;
+      const compressor = previewAudioCtx.createDynamicsCompressor();
+      compressor.threshold.value = -24;
+      compressor.knee.value = 30;
+      compressor.ratio.value = 3;
+      compressor.attack.value = 0.02;
+      compressor.release.value = 0.25;
+      sourceNode.connect(bassBoost);
+      bassBoost.connect(trebleBoost);
+      trebleBoost.connect(compressor);
+      compressor.connect(previewAudioCtx.destination);
+    }catch(e){ /* fonte sem CORS liberado, ou navegador sem suporte - toca normal sem realce */ }
+  }
+
   function setupAudioAnalyser(){
     if(audioCtx) return true;
     try{
@@ -3738,9 +3768,13 @@
       if(!url) return;
       stopPreview();
       audio.pause(); state.isPlaying = false; updatePlayUI();
-      previewAudio = new Audio(url);
+      previewAudio = new Audio();
+      const _srcMeta = window._iaResultsData && window._iaResultsData[id];
+      if(_srcMeta && _srcMeta._audius) previewAudio.crossOrigin = 'anonymous';
+      previewAudio.src = url;
       previewAudio.volume = audio.volume;
       previewAudio.playbackRate = state.playbackRate;
+      if(_srcMeta && _srcMeta._audius) applyAutoEnhancement(previewAudio);
       previewAudio.play();
       previewPlayingId = id;
       stopRealEqualizer();
