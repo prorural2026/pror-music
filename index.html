@@ -3587,9 +3587,11 @@
       }
       showNowPlaying(displayTitle, dArtist, true, dMeta && dMeta._thumb);
       if(dMeta){
-        recordPlayCount(id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb || '', !!dMeta._jamendo, dMeta._jamendo ? dMeta._jamendoAudioUrl : '', !!dMeta._jamendoDownloadAllowed || !dMeta._jamendo);
-        if(!isRelaxTrack(id)){
-          recordShowcase('ml:' + id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb || '', 'musicalivre', { identifier: id, isJamendoStyle: !!dMeta._jamendo, directUrl: dMeta._jamendo ? dMeta._jamendoAudioUrl : '' });
+        if(dMeta._thumb){
+          recordPlayCount(id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb, !!dMeta._jamendo, dMeta._jamendo ? dMeta._jamendoAudioUrl : '', !!dMeta._jamendoDownloadAllowed || !dMeta._jamendo);
+          if(!isRelaxTrack(id)){
+            recordShowcase('ml:' + id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb, 'musicalivre', { identifier: id, isJamendoStyle: !!dMeta._jamendo, directUrl: dMeta._jamendo ? dMeta._jamendoAudioUrl : '' });
+          }
         }
       }
       if(typeof updateCastButtonVisibility === 'function') updateCastButtonVisibility();
