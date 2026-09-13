@@ -3567,10 +3567,18 @@
     jsonpRequest(iaUrl,
       (data) => {
         if(!cancelled){
-          iaDocs = ((data && data.response && data.response.docs) || []).map(d => {
-            d._thumb = 'https://archive.org/services/img/' + d.identifier;
-            return d;
-          });
+          iaDocs = ((data && data.response && data.response.docs) || [])
+            .filter(d => {
+              if(!d.runtime) return true; // sem informação de duração, mantém (não temos certeza que é curto)
+              const parts = String(d.runtime).split(':').map(Number);
+              if(parts.some(isNaN)) return true;
+              const seconds = parts.reduce((acc, v) => acc * 60 + v, 0);
+              return seconds >= 30; // remove fragmentos com menos de 30 segundos
+            })
+            .map(d => {
+              d._thumb = 'https://archive.org/services/img/' + d.identifier;
+              return d;
+            });
         }
         iaDone = true; checkAllDone();
       },
