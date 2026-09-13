@@ -160,6 +160,21 @@
         <div class="home-recent-row" id="homeRecentRow"></div>
       </div>
 
+      <div class="home-stats-card" id="homeStatsCard" style="display:none;">
+        <div class="home-stat">
+          <p class="home-stat-num" id="homeStatTracks">0</p>
+          <p class="home-stat-label">músicas ouvidas</p>
+        </div>
+        <div class="home-stat">
+          <p class="home-stat-num" id="homeStatPlays">0</p>
+          <p class="home-stat-label">reproduções</p>
+        </div>
+        <div class="home-stat" id="homeStatArtistWrap" style="display:none;">
+          <p class="home-stat-num" id="homeStatArtist" style="font-size:13px;"></p>
+          <p class="home-stat-label">artista favorito</p>
+        </div>
+      </div>
+
       <div class="home-section" id="homeMostPlayedSection" style="display:none;">
         <p class="home-section-title">Mais tocadas</p>
         <div class="home-recent-row" id="homeMostPlayedRow"></div>
@@ -864,6 +879,30 @@
   .home-showcase-item img{ width:100%; height:100%; object-fit:cover; display:block; }
   .home-showcase-item .showcase-fallback{ color:var(--ink-dim); font-size:16px; }
   .home-section{ margin-bottom:26px; }
+  .home-stats-card{
+    display:flex;
+    justify-content:space-around;
+    background:var(--bg-raised);
+    border:1px solid var(--line);
+    border-radius:12px;
+    padding:16px 10px;
+    margin-bottom:26px;
+  }
+  .home-stat{ text-align:center; flex:1; min-width:0; padding:0 4px; }
+  .home-stat-num{
+    font-family:Georgia,"Times New Roman",serif;
+    font-size:22px;
+    color:var(--accent);
+    margin:0;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .home-stat-label{
+    font-size:10px;
+    color:var(--ink-dim);
+    margin:2px 0 0;
+    text-transform:uppercase;
+    letter-spacing:.05em;
+  }
   .nav-plus-btn{
     box-sizing:border-box;
     flex-shrink:0;
@@ -1821,6 +1860,26 @@
     }catch(e){ return []; }
   }
 
+  function getListeningStats(){
+    try{
+      const counts = JSON.parse(localStorage.getItem(PLAYCOUNT_KEY) || '{}');
+      const entries = Object.values(counts);
+      const totalTracks = entries.length;
+      const totalPlays = entries.reduce((sum, v) => sum + (v.count || 0), 0);
+      const byArtist = {};
+      entries.forEach(v => {
+        const a = v.artist || 'Desconhecido';
+        byArtist[a] = (byArtist[a] || 0) + (v.count || 0);
+      });
+      const topArtist = Object.entries(byArtist).sort((a,b) => b[1] - a[1])[0];
+      return {
+        totalTracks,
+        totalPlays,
+        topArtist: topArtist ? topArtist[0] : null
+      };
+    }catch(e){ return { totalTracks: 0, totalPlays: 0, topArtist: null }; }
+  }
+
   function markGenreExplored(genre){
     try{
       let list = JSON.parse(localStorage.getItem(EXPLORED_GENRES_KEY) || '[]');
@@ -1958,6 +2017,23 @@
       `).join('');
     } else {
       recentSection.style.display = 'none';
+    }
+
+    const stats = getListeningStats();
+    const statsCard = document.getElementById('homeStatsCard');
+    if(stats.totalPlays > 0){
+      statsCard.style.display = '';
+      document.getElementById('homeStatTracks').textContent = stats.totalTracks;
+      document.getElementById('homeStatPlays').textContent = stats.totalPlays;
+      const artistWrap = document.getElementById('homeStatArtistWrap');
+      if(stats.topArtist){
+        artistWrap.style.display = '';
+        document.getElementById('homeStatArtist').textContent = stats.topArtist;
+      } else {
+        artistWrap.style.display = 'none';
+      }
+    } else {
+      statsCard.style.display = 'none';
     }
 
     const mostPlayed = getMostPlayed(6);
