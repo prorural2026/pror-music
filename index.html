@@ -3242,9 +3242,13 @@
 
   function runJamendoPlaylistsSearch(){
     const term = freeSearchInput.value.trim();
+    if(!term){
+      jamendoPlaylistsResults.innerHTML = '<div class="empty-state">Digite um termo (tipo "chill" ou "rock") e toca em Buscar pra ver playlists prontas.</div>';
+      return;
+    }
     jamendoPlaylistsResults.innerHTML = '<div class="web-loading">Buscando playlists…</div>';
     const url = 'https://api.jamendo.com/v3.0/playlists/?client_id=' + JAMENDO_CLIENT_ID +
-      '&format=json&limit=12' + (term ? '&namesearch=' + encodeURIComponent(term) : '&order=creationdate_desc');
+      '&format=json&limit=12&namesearch=' + encodeURIComponent(term);
     jsonpRequest(url,
       (data) => {
         const results = (data && data.results) || [];
