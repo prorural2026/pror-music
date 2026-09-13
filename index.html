@@ -53,7 +53,7 @@
     </div>
     <button class="pl-switch-btn" id="plSwitchBtn">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z"></path></svg>
-      <span id="plSwitchLabel">Minha playlist</span>
+      <span id="plSwitchLabel" data-i18n="plswitch">Minha playlist</span>
     </button>
   </div>
 
@@ -65,15 +65,15 @@
     <button class="collapse-handle" id="collapseHandle" title="Recolher">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="6 9 12 15 18 9"></polyline></svg>
     </button>
-    <p class="eyebrow" id="statusLabel">Nenhuma faixa</p>
-    <h1 class="now-title" id="nowTitle">Toque numa música da lista</h1>
+    <p class="eyebrow" id="statusLabel" data-i18n="no_track">Nenhuma faixa</p>
+    <h1 class="now-title" id="nowTitle" data-i18n="tap_to_play">Toque numa música da lista</h1>
     <p class="now-artist" id="nowArtist"></p>
 
     <div class="now-row">
       <div class="bars" id="bars">
         <span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span>
       </div>
-      <button class="share-btn" id="playerOptionsBtn" title="Mais opções">
+      <button class="share-btn" id="playerOptionsBtn" title="Mais opções" data-i18n-title="more_options">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
       </button>
     </div>
@@ -88,11 +88,11 @@
       <button class="share-btn" id="castBtn" title="Transmitir pra TV" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 16.1A5 5 0 0 1 5.9 20"></path><path d="M2 12.05A9 9 0 0 1 9.95 20"></path><path d="M2 8V6a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v12a2 2 0 0 1-2 2h-6"></path><line x1="2" y1="20" x2="2.01" y2="20"></line></svg>
       </button>
-      <button class="share-btn" id="repeatBtn" title="Repetir">
+      <button class="share-btn" id="repeatBtn" title="Repetir" data-i18n-title="repeat">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"></polyline><path d="M3 11V9a4 4 0 0 1 4-4h14"></path><polyline points="7 23 3 19 7 15"></polyline><path d="M21 13v2a4 4 0 0 1-4 4H3"></path></svg>
         <span id="repeatOneBadge" style="display:none;">1</span>
       </button>
-      <button class="share-btn" id="speedBtn" title="Velocidade">
+      <button class="share-btn" id="speedBtn" title="Velocidade" data-i18n-title="speed">
         <span id="speedLabel">1x</span>
       </button>
       <button class="share-btn" id="upNextTrigger" title="A seguir" style="display:none;">
@@ -110,7 +110,7 @@
 
   <div class="sheet-backdrop" id="upNextBackdrop">
     <div class="sheet">
-      <h3>A seguir</h3>
+      <h3 data-i18n="up_next">A seguir</h3>
       <div id="upNextList"></div>
     </div>
   </div>
@@ -132,24 +132,24 @@
       </div>
 
       <div class="home-section" id="homeReleasesSection" style="display:none;">
-        <p class="home-section-title">Lançamentos</p>
+        <p class="home-section-title" data-i18n="section_releases">Lançamentos</p>
         <div class="home-releases-grid" id="homeReleasesGrid"></div>
       </div>
 
       <div class="home-section home-hero-section" id="homeShowcaseSection" style="display:none;">
-        <p class="home-section-title">Vitrine</p>
+        <p class="home-section-title" data-i18n="section_showcase">Vitrine</p>
         <div class="home-showcase-grid" id="homeShowcaseGrid"></div>
         <div class="home-divider"></div>
       </div>
 
       <div class="home-section" id="homeRelaxSection" style="display:none;">
-        <p class="home-section-title" style="font-size:15px; font-family:Georgia,serif; text-transform:none; letter-spacing:0; color:var(--ink);">Relax</p>
+        <p class="home-section-title" style="font-size:15px; font-family:Georgia,serif; text-transform:none; letter-spacing:0; color:var(--ink);" data-i18n="section_relax">Relax</p>
         <div class="home-relax-grid" id="homeRelaxGrid"></div>
       </div>
 
 
       <div class="home-section" id="homeRecentSection" style="display:none;">
-        <p class="home-section-title">Tocadas recentemente</p>
+        <p class="home-section-title" data-i18n="section_recent">Tocadas recentemente</p>
         <div class="home-recent-row" id="homeRecentRow"></div>
       </div>
 
@@ -169,7 +169,7 @@
       </div>
 
       <div class="home-section" id="homeMostPlayedSection" style="display:none;">
-        <p class="home-section-title">Mais tocadas</p>
+        <p class="home-section-title" data-i18n="section_mostplayed">Mais tocadas</p>
         <div class="home-recent-row" id="homeMostPlayedRow"></div>
       </div>
 
@@ -178,7 +178,7 @@
 
   <div class="sheet-backdrop" id="footerPagesBackdrop">
     <div class="sheet">
-      <h3>Páginas</h3>
+      <h3 data-i18n="pages_title">Páginas</h3>
       <input type="text" id="footerPagesSearch" placeholder="Buscar página..." style="width:100%; box-sizing:border-box; padding:10px; border-radius:8px; border:1px solid var(--line); background:var(--bg-raised); color:var(--ink); font-size:13px; margin-bottom:12px;">
       <div id="footerPagesList"></div>
     </div>
@@ -237,14 +237,14 @@
       </button>
     </div>
     <div class="web-search-box">
-      <input type="text" id="freeSearchInput" placeholder="Nome da música, artista ou gênero" autocomplete="off">
+      <input type="text" id="freeSearchInput" placeholder="Nome da música, artista ou gênero" autocomplete="off" data-i18n-placeholder="placeholder_free_search">
       <button class="mic-btn" id="micFreeSearchInput" title="Buscar por voz" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"></path><path d="M19 10v2a7 7 0 0 1-14 0v-2"></path><line x1="12" y1="19" x2="12" y2="23"></line><line x1="8" y1="23" x2="16" y2="23"></line></svg>
       </button>
       <button id="freeSearchBtn" data-i18n="btn_search">Buscar</button>
     </div>
     <div style="padding:0 16px 4px; display:flex; gap:8px; flex-wrap:wrap;">
-      <button id="clipsModeToggle" style="background:none; border:1px solid var(--line); color:var(--ink-dim); font-size:11px; padding:6px 12px; border-radius:20px; cursor:pointer;">Ver clipes (vídeo)</button>
+      <button id="clipsModeToggle" style="background:none; border:1px solid var(--line); color:var(--ink-dim); font-size:11px; padding:6px 12px; border-radius:20px; cursor:pointer;" data-i18n="toggle_clips">Ver clipes (vídeo)</button>
     </div>
     <div id="clipsResults" style="display:none; padding:0 16px;"></div>
     <div class="cine-modal" id="clipPlayerModal">
@@ -262,18 +262,18 @@
     <div class="genre-chips" id="genreChips">
       <button class="chip" data-genre="rock">Rock</button>
       <button class="chip" data-genre="jazz">Jazz</button>
-      <button class="chip" data-genre="eletronica electronic">Eletrônica</button>
+      <button class="chip" data-genre="eletronica electronic" data-i18n="genre_electronic">Eletrônica</button>
       <button class="chip" data-genre="reggae">Reggae</button>
       <button class="chip" data-genre="forro sertanejo">Sertanejo/Forró</button>
       <button class="chip" data-genre="mpb bossa nova">MPB/Bossa</button>
       <button class="chip" data-genre="gospel">Gospel</button>
-      <button class="chip" data-genre="acoustic folk">Acústico</button>
+      <button class="chip" data-genre="acoustic folk" data-i18n="genre_acoustic">Acústico</button>
       <button class="chip" data-genre="instrumental">Instrumental</button>
       <button class="chip" data-genre="rnb soul">R&amp;B/Soul</button>
       <button class="chip" data-genre="hip hop rap">Hip Hop/Rap</button>
       <button class="chip" data-genre="funk">Funk</button>
       <button class="chip" data-genre="blues">Blues</button>
-      <button class="chip" data-genre="classical orchestra">Clássica</button>
+      <button class="chip" data-genre="classical orchestra" data-i18n="genre_classical">Clássica</button>
       <button class="chip" data-genre="pop">Pop</button>
     </div>
     <div class="web-results" id="freeResults">
@@ -288,15 +288,15 @@
     <div class="home-scroll">
       <button class="collapse-handle" id="legalBackBtn" style="width:auto; justify-content:flex-start; padding:16px 16px 6px;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:20px;height:20px;"><polyline points="15 18 9 12 15 6"></polyline></svg>
-        <span style="font-size:13px; margin-left:6px;">Voltar</span>
+        <span style="font-size:13px; margin-left:6px;" data-i18n="back">Voltar</span>
       </button>
       <div style="padding:10px 20px 30px;">
-        <h2 style="font-family:Georgia,serif; color:var(--accent); font-size:20px;">Direitos Autorais</h2>
-        <h3 style="color:var(--accent); font-size:14px; margin-top:22px;">Sobre o conteúdo do PROR-MUSIC</h3>
+        <h2 style="font-family:Georgia,serif; color:var(--accent); font-size:20px;" data-i18n="copyright_title">Direitos Autorais</h2>
+        <h3 style="color:var(--accent); font-size:14px; margin-top:22px;" data-i18n="about_content">Sobre o conteúdo do PROR-MUSIC</h3>
         <p style="color:var(--ink-dim); font-size:13px; line-height:1.6;">O PROR-MUSIC é um aplicativo pessoal, gratuito e sem fins lucrativos. A seção "Música livre" utiliza exclusivamente faixas com licença Creative Commons ou de domínio público, obtidas de fontes públicas como Internet Archive, Jamendo e Openverse.</p>
-        <h3 style="color:var(--accent); font-size:14px; margin-top:22px;">Uso permitido</h3>
+        <h3 style="color:var(--accent); font-size:14px; margin-top:22px;" data-i18n="allowed_use">Uso permitido</h3>
         <p style="color:var(--ink-dim); font-size:13px; line-height:1.6;">Todo o conteúdo exibido possui licença que autoriza expressamente sua execução e redistribuição gratuita pelo próprio autor. Sempre que disponível, o nome do artista é exibido junto à faixa.</p>
-        <h3 style="color:var(--accent); font-size:14px; margin-top:22px;">Solicitação de remoção</h3>
+        <h3 style="color:var(--accent); font-size:14px; margin-top:22px;" data-i18n="removal_request">Solicitação de remoção</h3>
         <p style="color:var(--ink-dim); font-size:13px; line-height:1.6;">Se você é autor de uma obra e acredita que ela foi incluída indevidamente, ou deseja que sua música seja removida do aplicativo por qualquer motivo, entre em contato:</p>
         <p style="font-size:13px;"><a href="mailto:josemar697@gmail.com" style="color:var(--accent);">josemar697@gmail.com</a></p>
       </div>
@@ -316,7 +316,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="10"></circle><polygon points="16.24 7.76 14.12 14.12 7.76 16.24 9.88 9.88 16.24 7.76"></polygon></svg>
       <span data-i18n="tab_free">Livre</span>
     </button>
-    <button class="nav-plus-btn" id="footerPagesBtn" title="Mais páginas">
+    <button class="nav-plus-btn" id="footerPagesBtn" title="Mais páginas" data-i18n-title="more_pages">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
     </button>
   </div>
@@ -327,7 +327,7 @@
 
   <div class="sheet-backdrop" id="sheetBackdrop">
     <div class="sheet">
-      <h3>Suas playlists</h3>
+      <h3 data-i18n="your_playlists">Suas playlists</h3>
       <div id="plList"></div>
       <div class="new-pl-row">
         <input type="text" id="newPlName" placeholder="Nome da nova playlist">
@@ -339,32 +339,32 @@
 
   <div class="sheet-backdrop" id="trackMenuBackdrop">
     <div class="sheet">
-      <h3>Opções</h3>
+      <h3 data-i18n="options_title">Opções</h3>
       <div class="sleep-options">
-        <button class="sleep-option" data-menuaction="add">Adicionar à playlist</button>
-        <button class="sleep-option" data-menuaction="download" id="trackMenuDownload">Baixar pro celular</button>
-        <button class="sleep-option" data-menuaction="similar" id="trackMenuSimilar" style="display:none;">Músicas parecidas</button>
-        <button class="sleep-option sleep-cancel" data-menuaction="remove">Não curti, tirar da lista</button>
+        <button class="sleep-option" data-menuaction="add" data-i18n="add_to_playlist">Adicionar à playlist</button>
+        <button class="sleep-option" data-menuaction="download" id="trackMenuDownload" data-i18n="download_to_phone">Baixar pro celular</button>
+        <button class="sleep-option" data-menuaction="similar" id="trackMenuSimilar" style="display:none;" data-i18n="similar_songs_btn">Músicas parecidas</button>
+        <button class="sleep-option sleep-cancel" data-menuaction="remove" data-i18n="remove_from_list">Não curti, tirar da lista</button>
       </div>
     </div>
   </div>
 
   <div class="sheet-backdrop" id="similarBackdrop">
     <div class="sheet">
-      <h3>Músicas parecidas</h3>
+      <h3 data-i18n="similar_songs_title">Músicas parecidas</h3>
       <div id="similarList"></div>
     </div>
   </div>
 
   <div class="sheet-backdrop" id="sleepSheetBackdrop">
     <div class="sheet">
-      <h3 id="sleepSheetTitle">Desligar em</h3>
+      <h3 id="sleepSheetTitle" data-i18n="sleep_timer_title">Desligar em</h3>
       <div class="sleep-options" id="sleepOptions">
         <button class="sleep-option" data-minutes="15">15 minutos</button>
         <button class="sleep-option" data-minutes="30">30 minutos</button>
         <button class="sleep-option" data-minutes="45">45 minutos</button>
         <button class="sleep-option" data-minutes="60">1 hora</button>
-        <button class="sleep-option sleep-cancel" data-minutes="0" id="sleepCancelBtn" style="display:none;">Cancelar temporizador</button>
+        <button class="sleep-option sleep-cancel" data-minutes="0" id="sleepCancelBtn" style="display:none;" data-i18n="cancel_timer">Cancelar temporizador</button>
       </div>
       <p class="save-note" id="sleepStatusNote">A música para sozinha depois do tempo escolhido.</p>
     </div>
@@ -376,7 +376,7 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
       </button>
       <div class="cine-info" style="padding-top:10px;">
-        <div class="cine-title" style="margin-bottom:16px;">Como instalar no iPhone</div>
+        <div class="cine-title" style="margin-bottom:16px;" data-i18n="how_install_iphone">Como instalar no iPhone</div>
         <div style="text-align:left; font-size:14px; color:var(--ink); line-height:1.6;">
           <p style="margin:0 0 12px;"><strong>1.</strong> Toque no ícone de compartilhar
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="width:16px;height:16px;vertical-align:middle;"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"></path><polyline points="16 6 12 2 8 6"></polyline><line x1="12" y1="2" x2="12" y2="15"></line></svg>
@@ -1519,6 +1519,40 @@
       tab_downloads: 'Downloads',
       btn_search: 'Search',
       placeholder_search: 'Search song or artist',
+      placeholder_free_search: 'Song, artist or genre',
+      plswitch: 'My playlist',
+      no_track: 'No track',
+      tap_to_play: 'Tap a song from the list',
+      up_next: 'Up next',
+      back: 'Back',
+      copyright_title: 'Copyright',
+      about_content: 'About the content',
+      allowed_use: 'Allowed use',
+      removal_request: 'Removal request',
+      section_releases: 'New releases',
+      section_showcase: 'Showcase',
+      section_relax: 'Relax',
+      section_recent: 'Recently played',
+      section_mostplayed: 'Most played',
+      pages_title: 'Pages',
+      toggle_clips: 'View clips (video)',
+      your_playlists: 'Your playlists',
+      options_title: 'Options',
+      add_to_playlist: 'Add to playlist',
+      download_to_phone: 'Download to phone',
+      similar_songs_btn: 'Similar songs',
+      remove_from_list: "Don't like it, remove from list",
+      similar_songs_title: 'Similar songs',
+      sleep_timer_title: 'Sleep timer',
+      cancel_timer: 'Cancel timer',
+      how_install_iphone: 'How to install on iPhone',
+      genre_electronic: 'Electronic',
+      genre_acoustic: 'Acoustic',
+      genre_classical: 'Classical',
+      more_options: 'More options',
+      repeat: 'Repeat',
+      speed: 'Speed',
+      more_pages: 'More pages',
     }
   };
 
@@ -1543,6 +1577,10 @@
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
       const key = el.dataset.i18nPlaceholder;
       if(dict[key]) el.placeholder = dict[key];
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+      const key = el.dataset.i18nTitle;
+      if(dict[key]) el.title = dict[key];
     });
   }
 
