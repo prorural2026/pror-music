@@ -3380,6 +3380,34 @@
     };
   }
 
+  function audiusSearch(term, offset, cb){
+    fetch('https://api.audius.co/v1/tracks/search?query=' + encodeURIComponent(term) + '&limit=12&offset=' + offset)
+      .then(r => r.json())
+      .then(data => cb((data && data.data) || []))
+      .catch(() => cb([]));
+  }
+
+  function normalizeAudiusTrack(t){
+    let runtime = '';
+    const dur = Number(t.duration);
+    if(!isNaN(dur) && dur > 0){
+      const m = Math.floor(dur / 60);
+      const s = Math.floor(dur % 60).toString().padStart(2,'0');
+      runtime = m + ':' + s;
+    }
+    const thumb = t.artwork && (t.artwork['480x480'] || t.artwork['150x150']) || '';
+    return {
+      identifier: 'audius:' + t.id,
+      title: t.title,
+      creator: (t.user && t.user.name) || 'Audius Artist',
+      runtime: runtime,
+      _thumb: thumb,
+      _audius: true,
+      _audiusStreamUrl: (t.stream && t.stream.url) || '',
+      _audiusDownloadAllowed: !!t.is_downloadable,
+    };
+  }
+
   function jamendoSearch(term, offset, cb){
     const url = 'https://api.jamendo.com/v3.0/tracks/?client_id=' + JAMENDO_CLIENT_ID +
       '&format=json&limit=12&offset=' + offset +
@@ -3519,7 +3547,7 @@
     fetchNextFreeResultsBatch(false);
   }
 
-  const freeSearchState = { term: '', iaStart: 0, jamendoOffset: 0, openverseOffset: 0, loading: false, exhausted: false };
+  const freeSearchState = { term: '', iaStart: 0, jamendoOffset: 0, openverseOffset: 0, audiusOffset: 0, loading: false, exhausted: false };
 
   function fetchNextFreeResultsBatch(append){
     if(freeSearchState.loading || freeSearchState.exhausted) return;
@@ -3541,11 +3569,11 @@
     const iaUrl = 'https://archive.org/advancedsearch.php?q=' + q +
       '&fl[]=identifier&fl[]=title&fl[]=creator&fl[]=downloads&fl[]=runtime&fl[]=date&sort[]=date+desc&rows=12&start=' + freeSearchState.iaStart + '&output=json';
 
-    let iaDone = false, jamendoDone = false, openverseDone = false;
-    let iaDocs = [], jamendoDocs = [], openverseDocs = [];
+    let iaDone = false, jamendoDone = false, openverseDone = false, audiusDone = false;
+    let iaDocs = [], jamendoDocs = [], openverseDocs = [], audiusDocs = [];
 
     function checkAllDone(){
-      if(!iaDone || !jamendoDone || !openverseDone || cancelled) return;
+      if(!iaDone || !jamendoDone || !openverseDone || !audiusDone || cancelled) return;
       freeSearchState.loading = false;
       activeFreeSearchCleanup = null;
       const indicator = document.getElementById('freeLoadMoreIndicator');
@@ -3553,12 +3581,14 @@
       freeSearchState.iaStart += iaDocs.length;
       freeSearchState.jamendoOffset += jamendoDocs.length;
       freeSearchState.openverseOffset += openverseDocs.length;
-      if(iaDocs.length === 0 && jamendoDocs.length === 0 && openverseDocs.length === 0){
+      freeSearchState.audiusOffset += audiusDocs.length;
+      if(iaDocs.length === 0 && jamendoDocs.length === 0 && openverseDocs.length === 0 && audiusDocs.length === 0){
         freeSearchState.exhausted = true;
       }
       const combined = iaDocs
         .concat(jamendoDocs.map(normalizeJamendoTrack))
-        .concat(openverseDocs.map(normalizeOpenverseTrack));
+        .concat(openverseDocs.map(normalizeOpenverseTrack))
+        .concat(audiusDocs.map(normalizeAudiusTrack));
       const excluded = getExcludedTracks();
       const filtered = combined.filter(d => !excluded.includes(d.identifier));
       renderFreeResults(filtered, append);
@@ -3590,6 +3620,9 @@
     openverseSearch(term, freeSearchState.openverseOffset,
       (results) => { if(!cancelled){ openverseDocs = results; } openverseDone = true; checkAllDone(); }
     );
+    audiusSearch(term, freeSearchState.audiusOffset,
+      (results) => { if(!cancelled){ audiusDocs = results; } audiusDone = true; checkAllDone(); }
+    );
   }
 
   const JUNK_TITLE_PATTERNS = /y\s*2\s*mate|savefrom|mp3juice|yt\s*mp3|yt1s\.com|y2mp3|ssyoutube|onlinevideoconverter|videoder|full[\s-]?hd|1080p|720p|480p|download\s*mp3|video\s*download|downloader|not\s*official|unofficial|karaoke|cover\s*version|cover\s*of|tribute\s*to|backing\s*track/i;
@@ -3608,7 +3641,7 @@
       return;
     }
     const html = docs.map(d => `
-      <div class="web-item" data-ia="${escapeHtml(d.identifier)}" data-iaplay="${escapeHtml(d.identifier)}" data-candownload="${(!d._jamendo || d._jamendoDownloadAllowed) ? '1' : '0'}" style="cursor:pointer;">
+      <div class="web-item" data-ia="${escapeHtml(d.identifier)}" data-iaplay="${escapeHtml(d.identifier)}" data-candownload="${(d._jamendo ? d._jamendoDownloadAllowed : (d._audius ? d._audiusDownloadAllowed : true)) ? '1' : '0'}" style="cursor:pointer;">
         <div class="web-item-art ${d._thumb ? '' : 'art-fallback'}" data-fallback="${escapeHtml(d.identifier)}">
           ${d._thumb ? `<img src="${escapeHtml(d._thumb)}" alt="" loading="lazy" onerror="this.parentElement.classList.add('art-fallback'); this.remove();">` : ''}
           <button class="web-item-kebab" data-iamenu="${escapeHtml(d.identifier)}" title="Mais opções">⋮</button>
@@ -3656,6 +3689,12 @@
       multiTrackFiles = null;
       multiTrackParentId = null;
       cb(d._jamendoAudioUrl || null);
+      return;
+    }
+    if(d && d._audius){
+      multiTrackFiles = null;
+      multiTrackParentId = null;
+      cb(d._audiusStreamUrl || null);
       return;
     }
     fetchIAAudioUrl(identifier, cb, fileIndex);
