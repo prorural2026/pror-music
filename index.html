@@ -118,13 +118,6 @@
   <div class="web-panel" id="panelHome">
     <div class="home-scroll">
 
-      <div style="display:flex; gap:8px; margin-bottom:16px;">
-        <input type="text" id="homeQuickSearchInput" placeholder="Buscar música, artista ou gênero" style="flex:1; min-width:0; background:var(--bg-raised); border:1px solid var(--line); border-radius:10px; padding:9px 12px; color:var(--ink); font-size:14px; outline:none;">
-        <button id="homeQuickSearchBtn" style="flex-shrink:0; width:38px; background:var(--bg-raised); border:1px solid var(--line); border-radius:10px; color:var(--accent); display:flex; align-items:center; justify-content:center;">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="width:18px;height:18px;"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
-        </button>
-      </div>
-
       <div class="home-nowplaying-card" id="homeNowPlayingCard" style="display:none; margin:14px 16px 14px;">
         <div class="home-nowplaying-art" id="homeNowPlayingArt"></div>
         <div class="home-nowplaying-info">
@@ -2537,21 +2530,6 @@
   tabHome.addEventListener('click', () => showView('home', true));
   tabPlaylist.addEventListener('click', () => showView('playlist', true));
   tabFree.addEventListener('click', () => showView('free', true));
-
-  const homeQuickSearchInput = document.getElementById('homeQuickSearchInput');
-  const homeQuickSearchBtn = document.getElementById('homeQuickSearchBtn');
-  function runHomeQuickSearch(){
-    const term = homeQuickSearchInput.value.trim();
-    if(!term) return;
-    showView('free', true);
-    freeSearchInput.value = term;
-    homeQuickSearchInput.value = '';
-    runFreeSearch();
-  }
-  if(homeQuickSearchBtn) homeQuickSearchBtn.addEventListener('click', runHomeQuickSearch);
-  if(homeQuickSearchInput){
-    homeQuickSearchInput.addEventListener('keydown', (e) => { if(e.key === 'Enter') runHomeQuickSearch(); });
-  }
   panelHome.classList.add('active');
 
   // ---------- Alternância Playlist / Baixadas ----------
