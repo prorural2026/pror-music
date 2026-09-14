@@ -3577,10 +3577,10 @@
       if(iaDocs.length === 0 && jamendoDocs.length === 0 && openverseDocs.length === 0 && audiusDocs.length === 0){
         freeSearchState.exhausted = true;
       }
-      const combined = iaDocs
+      const combined = audiusDocs.map(normalizeAudiusTrack)
+        .concat(iaDocs)
         .concat(jamendoDocs.map(normalizeJamendoTrack))
-        .concat(openverseDocs.map(normalizeOpenverseTrack))
-        .concat(audiusDocs.map(normalizeAudiusTrack));
+        .concat(openverseDocs.map(normalizeOpenverseTrack));
       const excluded = getExcludedTracks();
       const filtered = combined.filter(d => !excluded.includes(d.identifier));
       renderFreeResults(filtered, append);
