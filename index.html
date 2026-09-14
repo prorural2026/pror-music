@@ -118,19 +118,6 @@
   <div class="web-panel" id="panelHome">
     <div class="home-scroll">
 
-      <div class="home-nowplaying-card" id="homeNowPlayingCard" style="display:none; margin:14px 16px 14px;">
-        <div class="home-nowplaying-art" id="homeNowPlayingArt"></div>
-        <div class="home-nowplaying-info">
-          <p class="home-nowplaying-label">Tocando agora</p>
-          <p class="home-nowplaying-title" id="homeNowPlayingTitle"></p>
-          <p class="home-nowplaying-artist" id="homeNowPlayingArtist"></p>
-          <span class="mini-player-time" id="miniTime" style="display:none;"></span>
-        </div>
-        <button class="quick-pause-btn" id="quickPauseBtnHome" title="Pausar/Retomar">
-          <svg id="quickPauseIconHome" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
-        </button>
-      </div>
-
       <div class="home-section" id="homeReleasesSection" style="display:none;">
         <p class="home-section-title" data-i18n="section_releases">Lançamentos</p>
         <div class="home-releases-grid" id="homeReleasesGrid"></div>
@@ -185,18 +172,6 @@
   </div>
 
   <div class="web-panel" id="panelPlaylist">
-    <div class="home-nowplaying-card" id="playlistNowPlayingCard" style="display:none; margin:14px 16px 14px;">
-      <div class="home-nowplaying-art" id="playlistNowPlayingArt"></div>
-      <div class="home-nowplaying-info">
-        <p class="home-nowplaying-label">Tocando agora</p>
-        <p class="home-nowplaying-title" id="playlistNowPlayingTitle"></p>
-        <p class="home-nowplaying-artist" id="playlistNowPlayingArtist"></p>
-        <span class="mini-player-time" id="miniTimePlaylist" style="display:none;"></span>
-      </div>
-      <button class="quick-pause-btn" id="quickPauseBtnPlaylist" title="Pausar/Retomar">
-        <svg id="quickPauseIconPlaylist" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
-      </button>
-    </div>
     <div class="search-wrap">
       <div class="search-box">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"></circle><line x1="21" y1="21" x2="16.65" y2="16.65"></line></svg>
@@ -224,18 +199,6 @@
   </div>
 
   <div class="web-panel" id="panelFree">
-    <div class="home-nowplaying-card" id="livreNowPlayingCard" style="display:none; margin:14px auto; padding:9px; gap:9px; width:calc(100% - 48px);">
-      <div class="home-nowplaying-art" id="livreNowPlayingArt"></div>
-      <div class="home-nowplaying-info">
-        <p class="home-nowplaying-label">Tocando agora</p>
-        <p class="home-nowplaying-title" id="livreNowPlayingTitle"></p>
-        <p class="home-nowplaying-artist" id="livreNowPlayingArtist"></p>
-        <span class="mini-player-time" id="miniTimeLivre" style="display:none;"></span>
-      </div>
-      <button class="quick-pause-btn" id="quickPauseBtnLivre" title="Pausar/Retomar">
-        <svg id="quickPauseIconLivre" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
-      </button>
-    </div>
     <div class="web-search-box">
       <input type="text" id="freeSearchInput" placeholder="Nome da música, artista ou gênero" autocomplete="off" data-i18n-placeholder="placeholder_free_search">
       <button class="mic-btn" id="micFreeSearchInput" title="Buscar por voz" type="button">
@@ -301,6 +264,19 @@
         <p style="font-size:13px;"><a href="mailto:josemar697@gmail.com" style="color:var(--accent);">josemar697@gmail.com</a></p>
       </div>
     </div>
+  </div>
+
+  <div class="home-nowplaying-card" id="sharedNowPlayingCard" style="display:none; flex-shrink:0; margin:0 16px 10px;">
+    <div class="home-nowplaying-art" id="sharedNowPlayingArt"></div>
+    <div class="home-nowplaying-info">
+      <p class="home-nowplaying-label">Tocando agora</p>
+      <p class="home-nowplaying-title" id="sharedNowPlayingTitle"></p>
+      <p class="home-nowplaying-artist" id="sharedNowPlayingArtist"></p>
+      <span class="mini-player-time" id="miniTimeShared" style="display:none;"></span>
+    </div>
+    <button class="quick-pause-btn" id="quickPauseBtnShared" title="Pausar/Retomar">
+      <svg id="quickPauseIconShared" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"></path></svg>
+    </button>
   </div>
 
   <div class="tabs">
@@ -1451,16 +1427,14 @@
     return m + ':' + sec;
   }
   function updateMiniTime(current, duration){
-    ['miniTime', 'miniTimeLivre', 'miniTimePlaylist'].forEach(id => {
-      const el = document.getElementById(id);
-      if(!el) return;
-      if(!isFinite(duration) || duration <= 0){
-        el.style.display = 'none';
-        return;
-      }
-      el.style.display = '';
-      el.textContent = fmtTime(current) + ' / ' + fmtTime(duration);
-    });
+    const el = document.getElementById('miniTimeShared');
+    if(!el) return;
+    if(!isFinite(duration) || duration <= 0){
+      el.style.display = 'none';
+      return;
+    }
+    el.style.display = '';
+    el.textContent = fmtTime(current) + ' / ' + fmtTime(duration);
   }
 
   // ---------- Baixadas: guarda o áudio de verdade no aparelho (IndexedDB), toca sem internet ----------
@@ -1884,33 +1858,28 @@
     bars.classList.toggle('playing', !!isPlaying);
     updateQuickPauseIcon(!!isPlaying);
 
-    ['home', 'livre', 'playlist'].forEach(prefix => {
-      const card = document.getElementById(prefix + 'NowPlayingCard');
-      if(!card) return;
-      if(isPlaying){
-        card.style.display = 'flex';
-        document.getElementById(prefix + 'NowPlayingTitle').textContent = name;
-        document.getElementById(prefix + 'NowPlayingArtist').textContent = artist || '';
-        const artEl = document.getElementById(prefix + 'NowPlayingArt');
-        if(thumb){
-          artEl.innerHTML = `<img src="${thumb}" alt="" onerror="this.remove();">`;
-        } else {
-          artEl.innerHTML = '<svg viewBox="0 0 24 24" fill="#0d2418"><path d="M8 5v14l11-7z"></path></svg>';
-        }
+    const card = document.getElementById('sharedNowPlayingCard');
+    if(isPlaying){
+      card.style.display = 'flex';
+      document.getElementById('sharedNowPlayingTitle').textContent = name;
+      document.getElementById('sharedNowPlayingArtist').textContent = artist || '';
+      const artEl = document.getElementById('sharedNowPlayingArt');
+      if(thumb){
+        artEl.innerHTML = `<img src="${thumb}" alt="" onerror="this.remove();">`;
       } else {
-        card.style.display = 'none';
+        artEl.innerHTML = '<svg viewBox="0 0 24 24" fill="#0d2418"><path d="M8 5v14l11-7z"></path></svg>';
       }
-    });
+    } else {
+      card.style.display = 'none';
+    }
   }
 
   function updateQuickPauseIcon(isPlaying){
     const iconPath = isPlaying
       ? '<path d="M6 5h4v14H6zm8 0h4v14h-4z"></path>'
       : '<path d="M8 5v14l11-7z"></path>';
-    ['quickPauseIconHome', 'quickPauseIconLivre', 'quickPauseIconPlaylist'].forEach(id => {
-      const el = document.getElementById(id);
-      if(el) el.innerHTML = iconPath;
-    });
+    const el = document.getElementById('quickPauseIconShared');
+    if(el) el.innerHTML = iconPath;
   }
 
   function refreshNowPlayingFromPlaylist(){
@@ -2370,19 +2339,17 @@
 
   function updatePlayUI(){
     const progressRow = document.getElementById('progressRow');
-    const nowPlayingCards = ['home', 'livre', 'playlist']
-      .map(prefix => document.getElementById(prefix + 'NowPlayingCard'))
-      .filter(Boolean);
+    const nowPlayingCard = document.getElementById('sharedNowPlayingCard');
     if(state.isPlaying){
       bars.classList.add('playing');
       statusLabel.textContent = 'Tocando agora';
       if(progressRow) progressRow.classList.add('visible');
-      if(!previewAudio) nowPlayingCards.forEach(c => c.style.display = 'flex');
+      if(!previewAudio && nowPlayingCard) nowPlayingCard.style.display = 'flex';
     } else {
       bars.classList.remove('playing');
       if(state.currentIndex !== -1) statusLabel.textContent = 'Pausado';
       if(progressRow) progressRow.classList.remove('visible');
-      if(!previewAudio) nowPlayingCards.forEach(c => c.style.display = 'none');
+      if(!previewAudio && nowPlayingCard) nowPlayingCard.style.display = 'none';
     }
     if(!previewAudio) updateQuickPauseIcon(state.isPlaying);
     if(state.isPlaying && !previewAudio){
@@ -3202,15 +3169,13 @@
       togglePlay();
     }
   }
-  ['quickPauseBtnHome', 'quickPauseBtnLivre', 'quickPauseBtnPlaylist'].forEach(id => {
-    const btn = document.getElementById(id);
-    if(btn){
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        handleQuickPauseClick();
-      });
-    }
-  });
+  const quickPauseBtnShared = document.getElementById('quickPauseBtnShared');
+  if(quickPauseBtnShared){
+    quickPauseBtnShared.addEventListener('click', (e) => {
+      e.stopPropagation();
+      handleQuickPauseClick();
+    });
+  }
 
   const playerHeader = document.getElementById('playerHeader');
   const miniPlayer = document.getElementById('miniPlayer');
@@ -3221,15 +3186,13 @@
     miniPlayer.classList.toggle('hidden', isExpanded);
   }
 
-  ['home', 'livre', 'playlist'].forEach(prefix => {
-    const card = document.getElementById(prefix + 'NowPlayingCard');
-    if(card){
-      card.addEventListener('click', () => {
-        playerHeader.classList.add('expanded');
-        miniPlayer.classList.add('hidden');
-      });
-    }
-  });
+  const sharedNowPlayingCard = document.getElementById('sharedNowPlayingCard');
+  if(sharedNowPlayingCard){
+    sharedNowPlayingCard.addEventListener('click', () => {
+      playerHeader.classList.add('expanded');
+      miniPlayer.classList.add('hidden');
+    });
+  }
 
   if(miniPlayer){
     miniPlayer.addEventListener('click', togglePlayerExpanded);
