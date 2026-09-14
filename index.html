@@ -3704,8 +3704,8 @@
       freeResults.insertAdjacentHTML('beforeend', html);
     } else {
       freeResults.innerHTML = html;
-      window._iaResultsData = {};
     }
+    if(!window._iaResultsData) window._iaResultsData = {};
     docs.forEach(d => window._iaResultsData[d.identifier] = d);
     window._iaResultsList = append ? (window._iaResultsList || []).concat(docs) : docs;
   }
