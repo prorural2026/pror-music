@@ -160,6 +160,11 @@
         <div class="home-recent-row" id="homeMostPlayedRow"></div>
       </div>
 
+      <div class="home-section" id="homeRecommendedSection" style="display:none;">
+        <p class="home-section-title" data-i18n="section_recommended">Recomendado pra você</p>
+        <div class="home-showcase-grid" id="homeRecommendedGrid"></div>
+      </div>
+
     </div>
   </div>
 
@@ -1507,6 +1512,7 @@
       section_relax: 'Relax',
       section_recent: 'Recently played',
       section_mostplayed: 'Most played',
+      section_recommended: 'Recommended for you',
       pages_title: 'Pages',
       toggle_clips: 'View clips (video)',
       your_playlists: 'Your playlists',
@@ -1553,6 +1559,7 @@
       section_recent: 'Reproducidas recientemente',
       section_mostplayed: 'Más reproducidas',
       pages_title: 'Páginas',
+      section_recommended: 'Recomendado para ti',
       toggle_clips: 'Ver clips (video)',
       your_playlists: 'Tus playlists',
       options_title: 'Opciones',
@@ -1947,10 +1954,10 @@
   const PLAYCOUNT_KEY = 'pm_playcounts';
   const EXPLORED_GENRES_KEY = 'pm_explored_genres';
 
-  function recordPlayCount(identifier, title, artist, thumb, isJamendoStyle, directUrl, downloadAllowed){
+  function recordPlayCount(identifier, title, artist, thumb, isJamendoStyle, directUrl, downloadAllowed, genre){
     try{
       let counts = JSON.parse(localStorage.getItem(PLAYCOUNT_KEY) || '{}');
-      const existing = counts[identifier] || { title, artist, thumb, isJamendoStyle, directUrl, downloadAllowed, count: 0 };
+      const existing = counts[identifier] || { title, artist, thumb, isJamendoStyle, directUrl, downloadAllowed, genre, count: 0 };
       existing.count += 1;
       existing.title = title;
       existing.artist = artist;
@@ -1958,6 +1965,7 @@
       existing.isJamendoStyle = isJamendoStyle;
       existing.directUrl = directUrl;
       existing.downloadAllowed = downloadAllowed;
+      existing.genre = genre || existing.genre;
       counts[identifier] = existing;
       localStorage.setItem(PLAYCOUNT_KEY, JSON.stringify(counts));
     }catch(e){}
@@ -2012,6 +2020,53 @@
   function isRelaxTrack(id){
     return RELAX_DATA.some(r => r.identifier === id);
   }
+
+  let recommendedLoaded = false;
+  function getTopGenre(){
+    try{
+      const counts = JSON.parse(localStorage.getItem(PLAYCOUNT_KEY) || '{}');
+      const byGenre = {};
+      Object.values(counts).forEach(v => {
+        if(!v.genre) return;
+        byGenre[v.genre] = (byGenre[v.genre] || 0) + (v.count || 0);
+      });
+      const top = Object.entries(byGenre).sort((a,b) => b[1] - a[1])[0];
+      return top ? top[0] : null;
+    }catch(e){ return null; }
+  }
+  function loadRecommendedSection(){
+    const section = document.getElementById('homeRecommendedSection');
+    const grid = document.getElementById('homeRecommendedGrid');
+    const topGenre = getTopGenre();
+    if(!topGenre){
+      section.style.display = 'none';
+      return;
+    }
+    if(recommendedLoaded === topGenre) return;
+    fetch('https://api.audius.co/v1/tracks/recommended?genre=' + encodeURIComponent(topGenre) + '&limit=6')
+      .then(r => r.json())
+      .then(data => {
+        const results = (data && data.data) || [];
+        if(!results.length){ section.style.display = 'none'; return; }
+        recommendedLoaded = topGenre;
+        section.style.display = '';
+        grid.innerHTML = results.map(t => {
+          const n = normalizeAudiusTrack(t);
+          window._iaResultsData = window._iaResultsData || {};
+          window._iaResultsData[n.identifier] = n;
+          return `
+          <button class="home-showcase-item" data-recommended-id="${escapeHtml(n.identifier)}">
+            ${n._thumb ? `<img src="${escapeHtml(n._thumb)}" alt="" loading="lazy">` : '<span class="showcase-fallback">♪</span>'}
+          </button>`;
+        }).join('');
+      })
+      .catch(() => { section.style.display = 'none'; });
+  }
+  document.getElementById('homeRecommendedGrid').addEventListener('click', (e) => {
+    const item = e.target.closest('[data-recommended-id]');
+    if(!item) return;
+    playIATrack(item.dataset.recommendedId);
+  });
 
   function loadRelaxSection(){
     if(relaxLoaded) return;
@@ -2116,6 +2171,7 @@
     renderShowcase();
     renderReleases();
     loadRelaxSection();
+    loadRecommendedSection();
 
     const recent = getRecentlyPlayed();
     const recentSection = document.getElementById('homeRecentSection');
@@ -3397,6 +3453,7 @@
       _audius: true,
       _audiusStreamUrl: (t.stream && t.stream.url) || '',
       _audiusDownloadAllowed: !!t.is_downloadable,
+      _audiusGenre: t.genre || '',
     };
   }
 
@@ -3751,7 +3808,7 @@
       showNowPlaying(displayTitle, dArtist, true, dMeta && dMeta._thumb);
       if(dMeta){
         if(dMeta._thumb){
-          recordPlayCount(id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb, !!dMeta._jamendo, dMeta._jamendo ? dMeta._jamendoAudioUrl : '', !!dMeta._jamendoDownloadAllowed || !dMeta._jamendo);
+          recordPlayCount(id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb, !!dMeta._jamendo, dMeta._jamendo ? dMeta._jamendoAudioUrl : '', !!dMeta._jamendoDownloadAllowed || !dMeta._jamendo, dMeta._audiusGenre || '');
           if(!isRelaxTrack(id)){
             recordShowcase('ml:' + id, dMeta.title || dMeta.identifier, dArtist, dMeta._thumb, 'musicalivre', { identifier: id, isJamendoStyle: !!dMeta._jamendo, directUrl: dMeta._jamendo ? dMeta._jamendoAudioUrl : '' });
           }
